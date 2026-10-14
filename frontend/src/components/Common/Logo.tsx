@@ -1,8 +1,7 @@
 import { Link } from "@tanstack/react-router"
 
+import { APP_NAME } from "@/lib/brand"
 import { cn } from "@/lib/utils"
-
-const PROJECT_NAME = "Memorial Robot"
 
 interface LogoProps {
   variant?: "full" | "icon" | "responsive"
@@ -18,7 +17,7 @@ function Wordmark({ className }: { className?: string }) {
         className,
       )}
     >
-      {PROJECT_NAME}
+      {APP_NAME}
     </span>
   )
 }
@@ -27,7 +26,7 @@ function Monogram({ className }: { className?: string }) {
   return (
     <span
       role="img"
-      aria-label={PROJECT_NAME}
+      aria-label={APP_NAME}
       className={cn(
         "bg-primary text-primary-foreground inline-flex size-5 items-center justify-center rounded text-[10px] font-bold",
         className,
@@ -49,9 +48,7 @@ export function Logo({
         <Wordmark
           className={cn("group-data-[collapsible=icon]:hidden", className)}
         />
-        <Monogram
-          className={cn("hidden group-data-[collapsible=icon]:flex", className)}
-        />
+        <Monogram className="hidden group-data-[collapsible=icon]:flex" />
       </>
     ) : variant === "full" ? (
       <Wordmark className={className} />

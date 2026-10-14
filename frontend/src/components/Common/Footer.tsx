@@ -1,3 +1,5 @@
+import { APP_NAME } from "@/lib/brand"
+
 export function Footer() {
   const currentYear = new Date().getFullYear()
 
@@ -5,7 +7,7 @@ export function Footer() {
     <footer className="border-t py-4 px-6">
       <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
         <p className="text-muted-foreground text-sm">
-          © {currentYear} Memorial Robot
+          © {currentYear} {APP_NAME}
         </p>
       </div>
     </footer>

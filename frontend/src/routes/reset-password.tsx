@@ -23,6 +23,7 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import { APP_NAME } from "@/lib/brand"
 import { handleError } from "@/utils"
 
 const searchSchema = z.object({
@@ -60,7 +61,7 @@ export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
       {
-        title: "Reset Password - Memorial Robot",
+        title: `Reset Password - ${APP_NAME}`,
       },
     ],
   }),

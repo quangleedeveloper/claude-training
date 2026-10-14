@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
+import { APP_NAME } from "@/lib/brand"
 
 const formSchema = z.object({
   username: z.email({ message: "Invalid email address" }),
@@ -44,7 +45,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       {
-        title: "Log In - Memorial Robot",
+        title: `Log In - ${APP_NAME}`,
       },
     ],
   }),

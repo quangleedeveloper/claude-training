@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router"
 
 import useAuth from "@/hooks/useAuth"
+import { APP_NAME } from "@/lib/brand"
 
 export const Route = createFileRoute("/_layout/")({
   component: Dashboard,
   head: () => ({
     meta: [
       {
-        title: "Dashboard - Memorial Robot",
+        title: `Dashboard - ${APP_NAME}`,
       },
     ],
   }),

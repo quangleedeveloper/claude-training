@@ -8,6 +8,7 @@ import { columns, type UserTableData } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import useAuth from "@/hooks/useAuth"
+import { APP_NAME } from "@/lib/brand"
 
 function getUsersQueryOptions() {
   return {
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/_layout/admin")({
   head: () => ({
     meta: [
       {
-        title: "Admin - Memorial Robot",
+        title: `Admin - ${APP_NAME}`,
       },
     ],
   }),

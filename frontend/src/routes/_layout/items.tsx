@@ -8,6 +8,7 @@ import { DataTable } from "@/components/Common/DataTable"
 import AddItem from "@/components/Items/AddItem"
 import { columns } from "@/components/Items/columns"
 import PendingItems from "@/components/Pending/PendingItems"
+import { APP_NAME } from "@/lib/brand"
 
 function getItemsQueryOptions() {
   return {
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/_layout/items")({
   head: () => ({
     meta: [
       {
-        title: "Items - Memorial Robot",
+        title: `Items - ${APP_NAME}`,
       },
     ],
   }),
