@@ -1,4 +1,5 @@
 # Memorial Robot
+
 Memorial Robot is an AI robot designed to preserve memories and simulate the conversational abilities of the deceased.
 
 ## Technology Stack
