@@ -20,6 +20,7 @@ A full-stack web app initialized from [full-stack-fastapi-template](https://gith
 - `.claude/commands/` — Custom slash commands (e.g., `/optimize`)
 - `.claude/skills/` — Skills invoked automatically by Claude or via slash commands
 - `.claude/settings.json` — Team-shared hooks and permissions (commit this file)
+- `.claude/hooks/format.sh` — PostToolUse hook: after Write/Edit, runs ruff on `.py` and Biome (from the nearest `biome.json` package) on TS/JS/JSON/CSS; tools that aren't installed are skipped
 
 ## Common Commands
 
