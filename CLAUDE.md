@@ -47,6 +47,7 @@ description: <what it does and when to use it>
 
 ## TypeScript / JavaScript
 
+- Prefer `async/await` over `.then()`/`.catch()` promise chains
 - Formatter: `prettier --write <file>`
 - Linter: `eslint <file>`
 - Configure via `.prettierrc` and `.eslintrc` (or `eslint.config.js`)
