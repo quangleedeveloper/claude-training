@@ -1,5 +1,5 @@
 {
-  "name": "fastapi-full-stack-template",
+  "name": "memorial-robot",
   "private": true,
   "workspaces": [
     "frontend",

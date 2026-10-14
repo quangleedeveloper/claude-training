@@ -1,4 +1,4 @@
-# FastAPI Project - Deployment
+# Memorial Robot - Deployment
 
 Deploy the project to [FastAPI Cloud](https://fastapicloud.com) with the included GitHub Actions workflow.
 
@@ -90,8 +90,5 @@ For deployment to your own server, see the [Docker Compose deployment guide](./d
 
 Install the following GitHub Apps to enable the included repository automation:
 
-* [Latest Changes](https://github.com/apps/latest-changes) updates `release-notes.md` when a pull request is merged.
 * [PR Push](https://github.com/apps/pr-push) lets the pre-commit workflow push automated fixes to pull request branches.
-* [PR Submit](https://github.com/apps/pr-submit) lets the **Bump pre-commit hooks** and **Prepare Release** workflows create pull requests.
-
-To publish code coverage with [Smokeshow](https://github.com/samuelcolvin/smokeshow), add `SMOKESHOW_AUTH_KEY` as a repository secret.
+* [PR Submit](https://github.com/apps/pr-submit) lets the **Bump pre-commit hooks** workflow create pull requests.

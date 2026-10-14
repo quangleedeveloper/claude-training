@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A full-stack web app initialized from [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template): FastAPI + SQLModel + PostgreSQL backend, React + TypeScript + Vite frontend, run with Docker Compose. It also carries a curated set of Claude Code commands, skills, and hooks.
+**Memorial Robot** — an AI robot designed to preserve memories and simulate the conversational abilities of the deceased.
+
+Built on [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-template): FastAPI + SQLModel + PostgreSQL backend, React + TypeScript + Vite frontend, run with Docker Compose. The template's sample `Item` model and pages are still in place. The repo also carries a curated set of Claude Code commands, skills, and hooks.
 
 ## Directory Structure
 
@@ -16,7 +18,7 @@ A full-stack web app initialized from [full-stack-fastapi-template](https://gith
 - `frontend/` — React app (bun workspace): TanStack Router file routes in `src/routes/`, generated API client in `src/client/` (do not hand-edit), Playwright tests in `tests/`
 - `packages/react-email/` — email templates, exported to `backend/app/email-templates/`
 - `compose.yml` / `compose.override.yml` (local dev) / `compose.deploy.yml` — Docker Compose stacks
-- `.env` — shared config for backend and compose; replace every `changethis` secret before deploying
+- `.env.example` — tracked config defaults (incl. `PROJECT_NAME`); copy to `.env` (gitignored), which the backend and compose read. Replace every `changethis` secret before deploying
 - `.claude/commands/` — Custom slash commands (e.g., `/optimize`)
 - `.claude/skills/` — Skills invoked automatically by Claude or via slash commands
 - `.claude/settings.json` — Team-shared hooks and permissions (commit this file)
@@ -25,6 +27,7 @@ A full-stack web app initialized from [full-stack-fastapi-template](https://gith
 ## Common Commands
 
 ```bash
+# First time: cp .env.example .env
 # Full stack (app at http://localhost:8000, docs at /docs, Mailpit at :8025, Adminer at :8080)
 docker compose run --rm backend bash scripts/prestart.sh
 docker compose watch

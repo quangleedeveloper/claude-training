@@ -1,8 +1,14 @@
-# FastAPI Project - Development
+# Memorial Robot - Development
 
 ## Local Development
 
 For local development, run PostgreSQL and Mailpit with Docker Compose, and run the FastAPI and Vite development servers locally.
+
+Create your local `.env` file (see [The `.env` File](#the-env-file)):
+
+```bash
+cp .env.example .env
+```
 
 Start the supporting services:
 
@@ -99,7 +105,7 @@ docker compose watch
 
 ## The `.env` File
 
-The tracked `.env` file contains local development defaults, passwords, and other configuration. Its hostnames use `localhost` for processes running on your machine. Docker Compose overrides hostnames such as the database and SMTP server with their Compose service names.
+The tracked `.env.example` file contains local development defaults, passwords, and other configuration. Copy it to `.env` (gitignored) and edit your copy; the backend and Docker Compose read `.env`, not `.env.example`. When you add a new setting, add it to `.env.example` too. Its hostnames use `localhost` for processes running on your machine. Docker Compose overrides hostnames such as the database and SMTP server with their Compose service names.
 
 Do not store deployment secrets in `.env`. Configure them as described in the [FastAPI Cloud deployment guide](./deployment.md) or the [Docker Compose deployment guide](./deployment-docker-compose.md).
 
