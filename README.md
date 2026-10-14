@@ -1,8 +1,4 @@
 # Memorial Robot
-
-[![Test Docker Compose](../../actions/workflows/test-docker-compose.yml/badge.svg)](../../actions/workflows/test-docker-compose.yml)
-[![Test Backend](../../actions/workflows/test-backend.yml/badge.svg)](../../actions/workflows/test-backend.yml)
-
 Memorial Robot is an AI robot designed to preserve memories and simulate the conversational abilities of the deceased.
 
 ## Technology Stack

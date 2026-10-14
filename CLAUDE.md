@@ -79,13 +79,6 @@ description: <what it does and when to use it>
 - Skills run on-demand (user types `/<name>`) or auto-trigger when Claude detects a match
 - Add `disable-model-invocation: true` for skills with side effects
 
-## Python
+## Conventions
 
-- Formatter: `ruff format <file>`
-- Linter: `ruff check <file>`; type checker: `mypy`
-- Configure via `backend/pyproject.toml` `[tool.ruff]` section
-
-## TypeScript / JavaScript
-
-- Prefer `async/await` over `.then()`/`.catch()` promise chains
-- Formatter and linter: Biome (`bun run lint`), configured in `frontend/biome.json` — the template does not use Prettier or ESLint
+See `.claude/rules/` for code style (`code-style.md`), testing (`testing.md`), and branch/commit/MR workflow (`workflow.md`).
