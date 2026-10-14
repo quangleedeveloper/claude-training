@@ -27,7 +27,6 @@
 ## CI
 - `.github/workflows/` comes from the template and **does not run on GitLab**. Decision pending: port the jobs to `.gitlab-ci.yml`, or delete `.github/`.
   - Jobs worth porting: pre-commit, backend tests + 90% coverage, Playwright, docker-compose smoke test.
-- The template workflows trigger on `master`. If you keep them, change that to `main`.
 
 ## Working with Claude Code
 - Start non-trivial work in plan mode (Shift+Tab). Approve the plan before any edits.
