@@ -21,6 +21,7 @@ Built on [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fas
 - `.env.example` — tracked config defaults (incl. `PROJECT_NAME`); copy to `.env` (gitignored), which the backend and compose read. Replace every `changethis` secret before deploying
 - `.claude/commands/` — Custom slash commands (e.g., `/optimize`)
 - `.claude/skills/` — Skills invoked automatically by Claude or via slash commands
+- `.claude/agents/` — Subagents (e.g., `code-improver`: read-only, Sonnet-powered code improvement suggestions)
 - `.claude/settings.json` — Team-shared hooks and permissions (commit this file)
 - `.claude/hooks/format.sh` — PostToolUse hook: after Write/Edit, runs ruff on `.py` and Biome (from the nearest `biome.json` package) on TS/JS/JSON/CSS; tools that aren't installed are skipped
 
