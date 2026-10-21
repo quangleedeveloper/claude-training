@@ -8,8 +8,8 @@
       }
     },
     "gitlab": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-gitlab"],
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@zereight/mcp-gitlab"],
       "env": {
         "GITLAB_PERSONAL_ACCESS_TOKEN": "${GITLAB_TOKEN}",
         "GITLAB_API_URL": "https://gitlab.asoft-python.com/api/v4"
