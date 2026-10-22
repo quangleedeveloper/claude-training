@@ -1,6 +1,6 @@
 #!/bin/bash
 # Security scan on file write
-# Hook: PostToolUse (matcher: Write)
+# Hook: PostToolUse (matcher: Write|Edit)
 #
 # Scans files for hardcoded secrets, API keys, and credentials.
 # Outputs a non-blocking warning via additionalContext when issues are found.
@@ -12,7 +12,12 @@ INPUT=$(cat)
 
 # Extract file_path using sed (compatible with all platforms including Windows Git Bash)
 # Avoids grep -P (not available on Windows Git Bash) and python3 dependency
-FILE_PATH=$(echo "$INPUT" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+FILE_PATH=$(printf '%s' "$INPUT" | sed -nE 's/.*"file_path"[[:space:]]*:[[:space:]]*"(([^"\\]|\\.)*)".*/\1/p' | head -1)
+# Undo JSON escaping (Windows paths arrive as D:\\code\\...), then use a POSIX path under Git Bash
+FILE_PATH=$(printf '%s' "$FILE_PATH" | sed 's/\\"/"/g; s/\\\\/\\/g')
+if command -v cygpath &> /dev/null; then
+  FILE_PATH=$(cygpath -u "$FILE_PATH" 2>/dev/null || printf '%s' "$FILE_PATH")
+fi
 
 if [ -z "$FILE_PATH" ] || [ ! -f "$FILE_PATH" ]; then
   exit 0
@@ -55,14 +60,30 @@ if grep -qE "AKIA[0-9A-Z]{16}" "$FILE_PATH" 2>/dev/null; then
   ISSUES="${ISSUES}- WARNING: AWS access key detected\\n"
 fi
 
-# Scan with semgrep if available (stdout suppressed to avoid mixing with JSON output)
+# Bound the external scanners so an edit never hangs on a slow rule download
+run_scanner() {
+  if command -v timeout &> /dev/null; then
+    timeout 20 "$@" >/dev/null 2>&1
+  else
+    "$@" >/dev/null 2>&1
+  fi
+}
+
+# Scan with semgrep if available. --error makes findings exit 1; a timeout (124)
+# or tool failure is not a finding.
 if command -v semgrep &> /dev/null; then
-  semgrep --config=auto "$FILE_PATH" --quiet >/dev/null 2>/dev/null
+  run_scanner semgrep --config=auto --metrics=off --error --quiet "$FILE_PATH"
+  if [ $? -eq 1 ]; then
+    ISSUES="${ISSUES}- WARNING: semgrep reported findings\\n"
+  fi
 fi
 
-# Scan with trufflehog if available (stdout suppressed to avoid mixing with JSON output)
+# Scan with trufflehog if available. --fail exits 183 when secrets are found.
 if command -v trufflehog &> /dev/null; then
-  trufflehog filesystem "$FILE_PATH" --only-verified --quiet >/dev/null 2>/dev/null
+  run_scanner trufflehog filesystem "$FILE_PATH" --only-verified --fail --no-update
+  if [ $? -eq 183 ]; then
+    ISSUES="${ISSUES}- WARNING: trufflehog found verified secrets\\n"
+  fi
 fi
 
 # If issues found, output as additionalContext (non-blocking warning)

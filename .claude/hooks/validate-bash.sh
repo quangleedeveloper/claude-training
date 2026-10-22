@@ -8,6 +8,9 @@
 #
 # Compatible with: macOS, Linux, Windows (Git Bash)
 
+# Shared production-deploy gate
+source "$(dirname "${BASH_SOURCE[0]}")/deploy-gate.sh"
+
 # Read JSON input from stdin (Claude Code hook protocol)
 INPUT=$(cat)
 
@@ -27,35 +30,47 @@ deny() {
   exit 0
 }
 
+# Command boundary: start of line or after ; & | so patterns match commands,
+# not text inside a commit message or grep argument.
+BOUNDARY='(^|[;&|][[:space:]]*)'
+# Anything between words of one command, never crossing into the next one.
+SAME_CMD='[^;&|]*'
+
 # Destructive system commands
 DANGEROUS_PATTERNS=(
-  "rm -rf /"
-  "rm -rf ~"
-  "rm -rf \*"
-  "drop database"
-  "drop table"
-  "truncate table"
-  "format disk"
-  "mkfs"
-  "dd if="
+  "${BOUNDARY}rm[[:space:]]+-rf[[:space:]]+(/|~|\*)([[:space:]]|\$)"
+  "${BOUNDARY}mkfs(\.[a-z0-9]+)?([[:space:]]|\$)"
+  "${BOUNDARY}dd[[:space:]]+${SAME_CMD}if="
+  "${BOUNDARY}format[[:space:]]+disk"
+  # SQL only counts when a database client runs it
+  "${BOUNDARY}(psql|mysql|sqlite3|sqlcmd)[[:space:]]+${SAME_CMD}(drop[[:space:]]+(database|table)|truncate[[:space:]]+table)"
 )
 
 for pattern in "${DANGEROUS_PATTERNS[@]}"; do
-  if printf '%s' "$COMMAND" | grep -qi -- "$pattern"; then
-    deny "Dangerous operation detected: $pattern"
+  if printf '%s' "$COMMAND" | grep -qiE -- "$pattern"; then
+    deny "Dangerous operation detected in command."
   fi
 done
 
 # workflow.md: don't use --no-verify (prek must run on commit)
-if printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+(commit|push|merge).*--no-verify'; then
+# Covers -n (short for --no-verify on commit), git -C <dir>, and core.hooksPath overrides.
+GIT_ANY="git[[:space:]]+(${SAME_CMD}[[:space:]])?"
+if printf '%s' "$COMMAND" | grep -qE "${GIT_ANY}(commit|push|merge)[[:space:]]${SAME_CMD}--no-verify"; then
   deny "Do not use --no-verify: prek hooks must run (see .claude/rules/workflow.md)."
+fi
+if printf '%s' "$COMMAND" | grep -qE "${GIT_ANY}commit([[:space:]]${SAME_CMD})?[[:space:]]-[a-zA-Z]*n[a-zA-Z]*([[:space:]]|\$)"; then
+  deny "Do not use -n (--no-verify): prek hooks must run (see .claude/rules/workflow.md)."
+fi
+if printf '%s' "$COMMAND" | grep -qE "git[[:space:]]+${SAME_CMD}core\.hooksPath"; then
+  deny "Do not override core.hooksPath: prek hooks must run (see .claude/rules/workflow.md)."
 fi
 
 # workflow.md: main is protected, never push or force-push to it
-if printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+push.*(--force|-f([[:space:]]|$)|--force-with-lease)'; then
+if printf '%s' "$COMMAND" | grep -qE "${GIT_ANY}push[[:space:]]${SAME_CMD}(--force|-f([[:space:]]|\$)|--force-with-lease)"; then
   deny "Force push is not allowed."
 fi
-if printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+push([[:space:]]+[^[:space:]]+)?[[:space:]]+(HEAD:)?(refs/heads/)?main([[:space:]]|$)'; then
+# Any refspec that ends on main: `origin main`, `-u origin main`, `+main`, `x:main`, `HEAD:refs/heads/main`.
+if printf '%s' "$COMMAND" | grep -qE "${GIT_ANY}push[[:space:]]${SAME_CMD}[[:space:]]\+?([^[:space:];&|:]*:)?(refs/heads/)?main([[:space:]]|\$)"; then
   deny "main is protected: push a feature branch and open a merge request."
 fi
 
@@ -64,18 +79,21 @@ if printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+add.*(^|[[:space:]/])\.env(
   deny "Never commit .env: it holds secrets (see .claude/rules/workflow.md)."
 fi
 
-# Don't commit directly to main
-if printf '%s' "$COMMAND" | grep -qE 'git[[:space:]]+commit'; then
-  BRANCH=$(git branch --show-current 2>/dev/null)
-  if [ "$BRANCH" = "main" ]; then
-    deny "Never commit to main directly: create a <type>/<name> branch first."
+# Don't commit directly to main. Only judge the current branch when the command
+# runs `git commit` itself and does not first change branch or directory.
+if printf '%s' "$COMMAND" | grep -qE "${BOUNDARY}git[[:space:]]+commit"; then
+  if ! printf '%s' "$COMMAND" | grep -qE "(switch|checkout)[[:space:]]+${SAME_CMD}-[cbCB]([[:space:]]|\$)|git[[:space:]]+-C[[:space:]]|${BOUNDARY}cd[[:space:]]"; then
+    BRANCH=$(git branch --show-current 2>/dev/null)
+    if [ "$BRANCH" = "main" ]; then
+      deny "Never commit to main directly: create a <type>/<name> branch first."
+    fi
   fi
 fi
 
 # Production deployments need the approval file, same gate as validate-prompt.sh
-if printf '%s' "$COMMAND" | grep -qiE '(deploy|push).*production|compose\.deploy\.yml'; then
-  if [ ! -f ".deployment-approved" ]; then
-    deny "Production deployment requires approval. Create .deployment-approved file to proceed."
+if printf '%s' "$COMMAND" | grep -qiE "${BOUNDARY}(\./|bash |sh |make |docker |kubectl |ssh )${SAME_CMD}(deploy|push)${SAME_CMD}production|docker[[:space:]]+compose${SAME_CMD}compose\.deploy\.yml"; then
+  if ! deployment_approved; then
+    deny "$DEPLOY_APPROVAL_MESSAGE"
   fi
 fi
 

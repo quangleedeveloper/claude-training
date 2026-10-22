@@ -6,12 +6,17 @@
 #
 # Compatible with: macOS, Linux, Windows (Git Bash)
 
+# Shared production-deploy gate
+source "$(dirname "${BASH_SOURCE[0]}")/deploy-gate.sh"
+
 # Read JSON input from stdin (Claude Code hook protocol)
 INPUT=$(cat)
 
 # Extract the prompt text from JSON input
 # Claude Code sends the UserPromptSubmit text in the "prompt" field
-PROMPT=$(echo "$INPUT" | sed -n 's/.*"prompt"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+# Accept escaped characters so a prompt containing \" is not cut short. An escaped
+# "prompt" inside the text can't match, so the greedy prefix lands on the real field.
+PROMPT=$(printf '%s' "$INPUT" | sed -nE 's/.*"prompt"[[:space:]]*:[[:space:]]*"(([^"\\]|\\.)*)".*/\1/p' | head -1)
 
 
 if [ -z "$PROMPT" ]; then
@@ -36,8 +41,8 @@ done
 
 # Check for production deployments
 if echo "$PROMPT" | grep -qiE "(deploy|push).*production"; then
-  if [ ! -f ".deployment-approved" ]; then
-    echo '{"decision": "block", "reason": "Production deployment requires approval. Create .deployment-approved file to proceed."}'
+  if ! deployment_approved; then
+    printf '{"decision": "block", "reason": "%s"}' "$DEPLOY_APPROVAL_MESSAGE"
     exit 0
   fi
 fi
