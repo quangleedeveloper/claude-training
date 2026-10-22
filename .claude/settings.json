@@ -32,7 +32,8 @@
           },
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/security-scan.sh\""
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/security-scan.sh\"",
+            "timeout": 30
           }
         ]
       }
