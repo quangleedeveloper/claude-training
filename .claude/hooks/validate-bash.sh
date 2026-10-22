@@ -52,31 +52,62 @@ decoded=${decoded//"${BS}/"/\/}
 decoded=${decoded//"$MARK"/"$BS"}
 
 # Bash joins a backslash-newline pair into one line, so `git push \<NL> origin main` is one
-# command, and the line-by-line matching below would miss `main` if it stayed split. Join
-# only when the newline follows an odd number of backslashes: with an even number they are
-# escaped backslashes and the newline is a real command separator.
+# command, and the line-by-line matching below would miss `main` if it stayed split.
+#
+# Walk the text the way bash reads it so the join happens exactly where bash joins: a
+# backslash escapes the next character (a newline after it vanishes), single quotes are
+# literal, and a # that starts a word begins a comment that ends at the newline even when
+# it ends in a backslash.
 joined=''
-pending=''
-while IFS= read -r line || [ -n "$line" ]; do
-  trailing=${line##*[!\\]}
-  if [ $(( ${#trailing} % 2 )) -eq 1 ]; then
-    pending+=${line%\\}
+in_single=0
+in_double=0
+in_comment=0
+length=${#decoded}
+i=0
+while [ "$i" -lt "$length" ]; do
+  ch=${decoded:i:1}
+  i=$(( i + 1 ))
+  if [ "$in_comment" -eq 1 ]; then
+    [ "$ch" = $'\n' ] && in_comment=0
+    joined+=$ch
+  elif [ "$in_single" -eq 1 ]; then
+    [ "$ch" = "'" ] && in_single=0
+    joined+=$ch
+  elif [ "$ch" = '\' ]; then
+    next=${decoded:i:1}
+    i=$(( i + 1 ))
+    [ "$next" = $'\n' ] || joined+=$ch$next
+  elif [ "$in_double" -eq 1 ]; then
+    [ "$ch" = '"' ] && in_double=0
+    joined+=$ch
+  elif [ "$ch" = "'" ]; then
+    in_single=1
+    joined+=$ch
+  elif [ "$ch" = '"' ]; then
+    in_double=1
+    joined+=$ch
+  elif [ "$ch" = '#' ]; then
+    # Only a # at the start of a word is a comment; $#, ${#x} and a#b are not.
+    prev=${joined: -1}
+    case "$prev" in
+      ''|' '|$'\t'|$'\n'|';'|'&'|'|'|'(') in_comment=1 ;;
+    esac
+    joined+=$ch
   else
-    joined+="$pending$line"$'\n'
-    pending=''
+    joined+=$ch
   fi
-done <<< "$decoded"
-joined+=$pending
-COMMAND=${joined%$'\n'}
+done
+COMMAND=$joined
 
 # Fail closed: the normalization above must never turn a command into nothing.
 if [ -z "$COMMAND" ]; then
   deny "Could not parse the Bash command safely: refusing to run it unchecked."
 fi
 
-# The rules run twice, on the continuation-joined text and on the split text. A comment
-# ending in a backslash does not continue in bash, so `# note \<NL>rm -rf /` really runs
-# the second line, yet joining fuses it into the comment. Either form matching denies.
+# The rules run on the joined text and, as defense in depth, on the unjoined text too: the
+# scanner above is a simplified model of bash quoting (it does not know $'..' strings, for
+# one), so if its quote state ever drifts, the split form still catches what it hid.
+# Either form matching denies.
 check_rules() {
   local COMMAND=$1
 
