@@ -22,26 +22,6 @@ if [ -z "$COMMAND" ]; then
   exit 0
 fi
 
-# Undo JSON string escaping. A tab or newline arrives as \t or \n; left escaped, the
-# [[:space:]] and line-start (^) matching below would not see them as separators and
-# `git<TAB>push<TAB>origin<TAB>main` would slip past every rule. The real newline this
-# produces is a command boundary because grep matches line by line. \\ goes through a
-# placeholder so an escaped backslash is not read as the start of another escape.
-COMMAND=$(printf '%s' "$COMMAND" | sed -E '
-  s/\\\\/\x01/g
-  s/\\u0009/\t/g
-  s/\\u000[aA]/\n/g
-  s/\\t/\t/g
-  s/\\n/\n/g
-  s/\\r/ /g
-  s/\\"/"/g
-  s/\\\//\//g
-  s/\x01/\\/g')
-# Bash joins a backslash-newline pair into one line, so `git push \<NL> origin main` is one
-# command. Join them too, or the line-by-line matching would split it and miss `main`.
-# \r is not a separator in bash (an ordinary character), so it is mapped to a space above.
-COMMAND=$(printf '%s' "$COMMAND" | sed -z 's/\\\n//g')
-
 deny() {
   # $1 = reason. Escape backslashes and double quotes for JSON.
   local reason
@@ -49,6 +29,50 @@ deny() {
   printf '{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "%s"}}' "$reason"
   exit 0
 }
+
+# Undo JSON string escaping. A tab or newline arrives as \t or \n; left escaped, the
+# [[:space:]] and line-start (^) matching below would not see them as separators and
+# `git<TAB>push<TAB>origin<TAB>main` would slip past every rule. The real newline this
+# produces is a command boundary because grep matches line by line. Pure bash expansion
+# (no GNU-only sed escapes) so it behaves the same on Git Bash, Linux and macOS. \\ goes
+# through a placeholder so an escaped backslash is not read as the start of another escape.
+BS='\'
+MARK=$'\x01'
+decoded=$COMMAND
+decoded=${decoded//"$BS$BS"/$MARK}
+decoded=${decoded//"${BS}u0009"/$'\t'}
+decoded=${decoded//"${BS}u000a"/$'\n'}
+decoded=${decoded//"${BS}u000A"/$'\n'}
+decoded=${decoded//"${BS}t"/$'\t'}
+decoded=${decoded//"${BS}n"/$'\n'}
+# \r is an ordinary character in bash, not a separator, so it becomes a space.
+decoded=${decoded//"${BS}r"/ }
+decoded=${decoded//"${BS}\""/\"}
+decoded=${decoded//"${BS}/"/\/}
+decoded=${decoded//"$MARK"/"$BS"}
+
+# Bash joins a backslash-newline pair into one line, so `git push \<NL> origin main` is one
+# command, and the line-by-line matching below would miss `main` if it stayed split. Join
+# only when the newline follows an odd number of backslashes: with an even number they are
+# escaped backslashes and the newline is a real command separator.
+joined=''
+pending=''
+while IFS= read -r line || [ -n "$line" ]; do
+  trailing=${line##*[!\\]}
+  if [ $(( ${#trailing} % 2 )) -eq 1 ]; then
+    pending+=${line%\\}
+  else
+    joined+="$pending$line"$'\n'
+    pending=''
+  fi
+done <<< "$decoded"
+joined+=$pending
+COMMAND=${joined%$'\n'}
+
+# Fail closed: the normalization above must never turn a command into nothing.
+if [ -z "$COMMAND" ]; then
+  deny "Could not parse the Bash command safely: refusing to run it unchecked."
+fi
 
 # Command boundary: start of line or after ; & | so patterns match commands,
 # not text inside a commit message or grep argument.
