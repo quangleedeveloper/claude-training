@@ -39,7 +39,7 @@
     ],
     "SubagentStart": [
       {
-        "matcher": "code-review",
+        "matcher": "code-improver",
         "hooks": [
           {
             "type": "command",
