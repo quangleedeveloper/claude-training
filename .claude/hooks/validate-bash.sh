@@ -33,10 +33,14 @@ COMMAND=$(printf '%s' "$COMMAND" | sed -E '
   s/\\u000[aA]/\n/g
   s/\\t/\t/g
   s/\\n/\n/g
-  s/\\r/\n/g
+  s/\\r/ /g
   s/\\"/"/g
   s/\\\//\//g
   s/\x01/\\/g')
+# Bash joins a backslash-newline pair into one line, so `git push \<NL> origin main` is one
+# command. Join them too, or the line-by-line matching would split it and miss `main`.
+# \r is not a separator in bash (an ordinary character), so it is mapped to a space above.
+COMMAND=$(printf '%s' "$COMMAND" | sed -z 's/\\\n//g')
 
 deny() {
   # $1 = reason. Escape backslashes and double quotes for JSON.
