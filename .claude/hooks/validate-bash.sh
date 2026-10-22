@@ -22,6 +22,22 @@ if [ -z "$COMMAND" ]; then
   exit 0
 fi
 
+# Undo JSON string escaping. A tab or newline arrives as \t or \n; left escaped, the
+# [[:space:]] and line-start (^) matching below would not see them as separators and
+# `git<TAB>push<TAB>origin<TAB>main` would slip past every rule. The real newline this
+# produces is a command boundary because grep matches line by line. \\ goes through a
+# placeholder so an escaped backslash is not read as the start of another escape.
+COMMAND=$(printf '%s' "$COMMAND" | sed -E '
+  s/\\\\/\x01/g
+  s/\\u0009/\t/g
+  s/\\u000[aA]/\n/g
+  s/\\t/\t/g
+  s/\\n/\n/g
+  s/\\r/\n/g
+  s/\\"/"/g
+  s/\\\//\//g
+  s/\x01/\\/g')
+
 deny() {
   # $1 = reason. Escape backslashes and double quotes for JSON.
   local reason
