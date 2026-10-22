@@ -51,6 +51,8 @@
     ]
   },
   "enabledPlugins": {
-    "code-review-anthropics@anthropic-plugin-directory": true
+    "code-review-anthropics@anthropic-plugin-directory": true,
+    "security-guidance@claude-plugins-official": true,
+    "claude-security@claude-plugins-official": true
   }
 }
