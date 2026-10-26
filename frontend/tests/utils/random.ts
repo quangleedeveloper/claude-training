@@ -17,3 +17,9 @@ export const randomItemTitle = () =>
 
 export const randomItemDescription = () =>
   `Description ${Math.random().toString(36).substring(7)}`
+
+export const randomMemoryTitle = () =>
+  `Memory ${Math.random().toString(36).substring(7)}`
+
+export const randomMemoryContent = () =>
+  `Story ${Math.random().toString(36).substring(7)}`

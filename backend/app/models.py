@@ -53,6 +53,7 @@ class User(UserBase, table=True):
     hashed_password: str
     created_at: datetime | None = Field(default_factory=get_datetime_utc)
     items: list[Item] = Relationship(back_populates="owner", cascade_delete=True)
+    memories: list[Memory] = Relationship(back_populates="owner", cascade_delete=True)
 
 
 # Properties to return via API, id is always required
@@ -102,6 +103,47 @@ class ItemPublic(ItemBase):
 
 class ItemsPublic(SQLModel):
     data: list[ItemPublic]
+    count: int
+
+
+# Shared properties
+class MemoryBase(SQLModel):
+    title: str = Field(min_length=1, max_length=255)
+    person_name: str = Field(min_length=1, max_length=255)
+    content: str = Field(min_length=1, max_length=5000)
+
+
+# Properties to receive on memory creation
+class MemoryCreate(MemoryBase):
+    pass
+
+
+# Properties to receive on memory update
+class MemoryUpdate(SQLModel):
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    person_name: str | None = Field(default=None, min_length=1, max_length=255)
+    content: str | None = Field(default=None, min_length=1, max_length=5000)
+
+
+# Database model, database table inferred from class name
+class Memory(MemoryBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime | None = Field(default_factory=get_datetime_utc)
+    owner_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    owner: User | None = Relationship(back_populates="memories")
+
+
+# Properties to return via API, id is always required
+class MemoryPublic(MemoryBase):
+    id: uuid.UUID
+    owner_id: uuid.UUID
+    created_at: datetime | None = None
+
+
+class MemoriesPublic(SQLModel):
+    data: list[MemoryPublic]
     count: int
 
 

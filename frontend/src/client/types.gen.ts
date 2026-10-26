@@ -113,6 +113,86 @@ export type ItemsPublic = {
 };
 
 /**
+ * MemoriesPublic
+ */
+export type MemoriesPublic = {
+    /**
+     * Data
+     */
+    data: Array<MemoryPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * MemoryCreate
+ */
+export type MemoryCreate = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Person Name
+     */
+    person_name: string;
+    /**
+     * Content
+     */
+    content: string;
+};
+
+/**
+ * MemoryPublic
+ */
+export type MemoryPublic = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Person Name
+     */
+    person_name: string;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Owner Id
+     */
+    owner_id: string;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+};
+
+/**
+ * MemoryUpdate
+ */
+export type MemoryUpdate = {
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Person Name
+     */
+    person_name?: string | null;
+    /**
+     * Content
+     */
+    content?: string | null;
+};
+
+/**
  * Message
  */
 export type Message = {
@@ -920,6 +1000,155 @@ export type itemsUpdateItemResponses = {
 };
 
 export type itemsUpdateItemResponse = itemsUpdateItemResponses[keyof itemsUpdateItemResponses];
+
+export type memoriesReadMemoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/memories/';
+};
+
+export type memoriesReadMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesReadMemoriesError = memoriesReadMemoriesErrors[keyof memoriesReadMemoriesErrors];
+
+export type memoriesReadMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoriesPublic;
+};
+
+export type memoriesReadMemoriesResponse = memoriesReadMemoriesResponses[keyof memoriesReadMemoriesResponses];
+
+export type memoriesCreateMemoryData = {
+    body: MemoryCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/memories/';
+};
+
+export type memoriesCreateMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesCreateMemoryError = memoriesCreateMemoryErrors[keyof memoriesCreateMemoryErrors];
+
+export type memoriesCreateMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type memoriesCreateMemoryResponse = memoriesCreateMemoryResponses[keyof memoriesCreateMemoryResponses];
+
+export type memoriesDeleteMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}';
+};
+
+export type memoriesDeleteMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesDeleteMemoryError = memoriesDeleteMemoryErrors[keyof memoriesDeleteMemoryErrors];
+
+export type memoriesDeleteMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type memoriesDeleteMemoryResponse = memoriesDeleteMemoryResponses[keyof memoriesDeleteMemoryResponses];
+
+export type memoriesReadMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}';
+};
+
+export type memoriesReadMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesReadMemoryError = memoriesReadMemoryErrors[keyof memoriesReadMemoryErrors];
+
+export type memoriesReadMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type memoriesReadMemoryResponse = memoriesReadMemoryResponses[keyof memoriesReadMemoryResponses];
+
+export type memoriesUpdateMemoryData = {
+    body: MemoryUpdate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}';
+};
+
+export type memoriesUpdateMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesUpdateMemoryError = memoriesUpdateMemoryErrors[keyof memoriesUpdateMemoryErrors];
+
+export type memoriesUpdateMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type memoriesUpdateMemoryResponse = memoriesUpdateMemoryResponses[keyof memoriesUpdateMemoryResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;
