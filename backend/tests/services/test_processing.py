@@ -1,12 +1,16 @@
 import uuid
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
+from langgraph.checkpoint.postgres import PostgresSaver
 from sqlalchemy import text
 from sqlmodel import Session, col, select
 
+from app import crud
 from app.core import checkpoint
-from app.core.checkpoint import clear_thread
+from app.core.checkpoint import clear_thread, clear_threads
 from app.core.config import settings
 from app.core.errors import UserFacingError
 from app.core.storage import LocalFileStorage
@@ -355,3 +359,103 @@ def test_an_unexpected_error_never_shows_server_details(
 
     db.refresh(memory_file)
     assert memory_file.error_message == GENERIC_FAILURE
+
+
+def fail_a_file_midway(
+    db: Session, processor: FakeMediaProcessor, llm_client: FakeLLMClient
+) -> MemoryFile:
+    llm_client.error = "Ollama went away"
+    memory_file = create_random_memory_file(db)
+    process_memory_file(
+        memory_file.id, processor, LocalFileStorage(settings.UPLOAD_DIR), llm_client
+    )
+    assert checkpoint_count(db, memory_file.id) > 0
+    return memory_file
+
+
+def test_clear_threads_forgets_several_runs_over_one_connection(
+    db: Session,
+    media_processor: FakeMediaProcessor,
+    llm_client: FakeLLMClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    files = [fail_a_file_midway(db, media_processor, llm_client) for _ in range(3)]
+    opened: list[None] = []
+    real_open = checkpoint.open_checkpointer
+
+    @contextmanager
+    def counting_open() -> Iterator[PostgresSaver]:
+        opened.append(None)
+        with real_open() as saver:
+            yield saver
+
+    monkeypatch.setattr(checkpoint, "open_checkpointer", counting_open)
+
+    clear_threads([str(f.id) for f in files])
+
+    assert len(opened) == 1
+    assert [checkpoint_count(db, f.id) for f in files] == [0, 0, 0]
+
+
+def test_clear_threads_with_nothing_to_clear_opens_no_connection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def broken() -> None:
+        raise AssertionError("no connection should be opened")
+
+    monkeypatch.setattr(checkpoint, "open_checkpointer", broken)
+    clear_threads([])
+
+
+def test_clear_threads_keeps_going_when_one_thread_fails(
+    db: Session,
+    media_processor: FakeMediaProcessor,
+    llm_client: FakeLLMClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    file = fail_a_file_midway(db, media_processor, llm_client)
+    real_open = checkpoint.open_checkpointer
+
+    @contextmanager
+    def failing_first() -> Iterator[PostgresSaver]:
+        with real_open() as saver:
+            real_delete = saver.delete_thread
+
+            def delete(thread_id: str) -> None:
+                if thread_id == "broken":
+                    raise RuntimeError("database gone")
+                real_delete(thread_id)
+
+            monkeypatch.setattr(saver, "delete_thread", delete)
+            yield saver
+
+    monkeypatch.setattr(checkpoint, "open_checkpointer", failing_first)
+
+    clear_threads(["broken", str(file.id)])
+
+    assert checkpoint_count(db, file.id) == 0
+
+
+def test_removing_memory_files_clears_their_progress_in_one_go(
+    db: Session,
+    media_processor: FakeMediaProcessor,
+    llm_client: FakeLLMClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    memory_file = fail_a_file_midway(db, media_processor, llm_client)
+    calls: list[list[str]] = []
+
+    def recording_clear(thread_ids: Sequence[str]) -> None:
+        calls.append(list(thread_ids))
+        clear_threads(thread_ids)
+
+    monkeypatch.setattr("app.crud.clear_threads", recording_clear)
+
+    crud.remove_memory_files(
+        session=db,
+        storage=LocalFileStorage(settings.UPLOAD_DIR),
+        memory_ids=[memory_file.memory_id],
+    )
+
+    assert calls == [[str(memory_file.id)]]
+    assert checkpoint_count(db, memory_file.id) == 0
