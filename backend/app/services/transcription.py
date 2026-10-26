@@ -115,4 +115,8 @@ class FasterWhisperTranscriber:
 
 
 def get_transcriber() -> Transcriber:
+    if settings.AI_BACKEND == "fake":
+        from app.core.fake_ai import FakeTranscriber
+
+        return FakeTranscriber()
     return FasterWhisperTranscriber()

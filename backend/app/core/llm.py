@@ -144,4 +144,8 @@ class OllamaClient:
 
 def get_llm_client() -> LLMClient:
     # Read settings per call so tests can change them
+    if settings.AI_BACKEND == "fake":
+        from app.core.fake_ai import FakeLLMClient
+
+        return FakeLLMClient()
     return OllamaClient(settings.OLLAMA_BASE_URL, settings.OLLAMA_TIMEOUT_SECONDS)

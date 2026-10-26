@@ -73,6 +73,19 @@ class Settings(BaseSettings):
     MAX_VIDEO_BYTES: int = 200 * 1024 * 1024
     MAX_FILES_PER_UPLOAD: int = 10
 
+    # "fake" swaps the models for deterministic stand-ins so the app can be driven
+    # end to end (Playwright) where there is no Ollama. It is development only.
+    AI_BACKEND: Literal["ollama", "fake"] = "ollama"
+
+    @model_validator(mode="after")
+    def _fake_ai_only_in_development(self) -> Self:
+        if self.AI_BACKEND == "fake" and self.FASTAPI_ENV != "development":
+            raise ValueError(
+                "AI_BACKEND=fake answers with canned text and is only allowed "
+                "when FASTAPI_ENV=development"
+            )
+        return self
+
     # Local Ollama: chat model extracts and answers, embedding model powers search,
     # vision model describes photos. Whisper transcribes audio and video.
     OLLAMA_BASE_URL: str = "http://localhost:11434"

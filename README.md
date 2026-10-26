@@ -127,6 +127,7 @@ AI settings live in `.env` (see `.env.example`). Inside Docker the backend reach
 
 | Variable | Default | Purpose |
 |---|---|---|
+| `AI_BACKEND` | `ollama` | `fake` swaps the models for canned ones so Playwright can run where there is no Ollama (CI does this). It is refused unless `FASTAPI_ENV=development`, so it cannot be switched on in production by accident |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Where Ollama listens |
 | `OLLAMA_CHAT_MODEL` | `llama3.1` | Extracts facts and writes answers |
 | `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Embeddings. Must output 768 dimensions |
@@ -185,7 +186,7 @@ cd backend && uv run bash scripts/test.sh   # needs `docker compose up -d db` an
 bun run test                                # Playwright, needs the stack running
 ```
 
-Backend tests never call Ollama or Whisper: they use fakes (`backend/tests/utils/llm.py`) with a deterministic embedding, so search ranking can be asserted. Coverage must stay at or above 90%.
+Backend tests never call Ollama or Whisper: they use the fakes in `backend/app/core/fake_ai.py`, with a deterministic embedding so search ranking can be asserted. The Playwright run in CI uses the same fakes through `AI_BACKEND=fake`. Coverage must stay at or above 90%.
 
 ## Troubleshooting
 

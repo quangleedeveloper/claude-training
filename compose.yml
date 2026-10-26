@@ -65,6 +65,7 @@ services:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?Variable not set}@db:5432/app
       SENTRY_DSN: ${SENTRY_DSN:-}
       UPLOAD_DIR: /data/uploads
+      AI_BACKEND: ${AI_BACKEND:-ollama}
       # Ollama runs on the host, not in this stack
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-llama3.1}
