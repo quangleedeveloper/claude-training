@@ -1,9 +1,14 @@
 import uuid
+from collections.abc import Generator
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app.api.deps import get_db
 from app.core.config import settings
+from app.core.db import engine
+from app.main import app
 from app.models import ExtractedStatus
 from tests.utils.extracted_memory import create_random_extracted_memory
 from tests.utils.llm import FakeLLMClient
@@ -242,3 +247,135 @@ def test_deleting_a_file_removes_what_was_extracted_from_it(
 
     response = client.get(url(memory.id), headers=superuser_token_headers)
     assert response.json()["count"] == 0
+
+
+@pytest.mark.parametrize("field", ["content", "category", "people"])
+def test_update_extracted_memory_null_for_a_required_field(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    field: str,
+) -> None:
+    extracted = create_random_extracted_memory(db)
+
+    response = client.patch(
+        url(extracted.memory_id, extracted.id),
+        headers=superuser_token_headers,
+        json={field: None},
+    )
+
+    assert response.status_code == 422
+    db.refresh(extracted)
+    assert extracted.status == ExtractedStatus.ACTIVE
+
+
+def test_update_extracted_memory_null_clears_optional_fields(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    extracted = create_random_extracted_memory(db)
+    extracted.location = "Lake Erie"
+    extracted.event_date_text = "summer 1998"
+    db.add(extracted)
+    db.commit()
+
+    response = client.patch(
+        url(extracted.memory_id, extracted.id),
+        headers=superuser_token_headers,
+        json={"location": None, "event_date_text": None},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["location"] is None
+    assert response.json()["event_date_text"] is None
+
+
+def test_update_extracted_memory_editing_a_rejected_item_is_refused(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    extracted = create_random_extracted_memory(db, status=ExtractedStatus.REJECTED)
+
+    response = client.patch(
+        url(extracted.memory_id, extracted.id),
+        headers=superuser_token_headers,
+        json={"content": "Sneaky edit."},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Restore the item before editing it"
+    db.refresh(extracted)
+    assert extracted.status == ExtractedStatus.REJECTED
+    assert extracted.content != "Sneaky edit."
+
+
+def test_update_extracted_memory_restore_and_edit_in_one_request(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    extracted = create_random_extracted_memory(db, status=ExtractedStatus.REJECTED)
+
+    response = client.patch(
+        url(extracted.memory_id, extracted.id),
+        headers=superuser_token_headers,
+        json={"rejected": False, "content": "Back with new wording."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == ExtractedStatus.EDITED
+    assert response.json()["content"] == "Back with new wording."
+
+
+def test_rejecting_and_restoring_an_edited_item_keeps_it_edited(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    extracted = create_random_extracted_memory(db)
+    path = url(extracted.memory_id, extracted.id)
+    client.patch(path, headers=superuser_token_headers, json={"content": "Fixed."})
+
+    rejected = client.patch(
+        path, headers=superuser_token_headers, json={"rejected": True}
+    )
+    restored = client.patch(
+        path, headers=superuser_token_headers, json={"rejected": False}
+    )
+
+    assert rejected.json()["status"] == ExtractedStatus.REJECTED
+    # Back to edited, so a re-extraction still leaves the corrected wording alone
+    assert restored.json()["status"] == ExtractedStatus.EDITED
+    db.refresh(extracted)
+    assert extracted.was_edited is True
+
+
+def test_update_extracted_memory_holds_no_transaction_during_the_model_call(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    db: Session,
+    llm_client: FakeLLMClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    extracted = create_random_extracted_memory(db)
+    request_sessions: list[Session] = []
+
+    def tracked_session() -> Generator[Session]:
+        with Session(engine) as session:
+            request_sessions.append(session)
+            yield session
+
+    app.dependency_overrides[get_db] = tracked_session
+    in_transaction_during_embed: list[bool] = []
+    real_embed = llm_client.embed
+
+    def embed(texts: list[str]) -> list[list[float]]:
+        in_transaction_during_embed.append(request_sessions[0].in_transaction())
+        return real_embed(texts)
+
+    monkeypatch.setattr(llm_client, "embed", embed)
+    try:
+        response = client.patch(
+            url(extracted.memory_id, extracted.id),
+            headers=superuser_token_headers,
+            json={"content": "New wording."},
+        )
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert response.status_code == 200
+    assert in_transaction_during_embed == [False]
