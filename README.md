@@ -49,7 +49,7 @@ Design choices worth knowing:
 - **The model never answers from nothing.** If no retrieved memory is similar enough (`MIN_RELEVANCE_SCORE`), it does not call the chat model at all.
 - **Uncertainty is kept, not hidden.** Dates stay as written ("summer 1998"). Each item has a confidence score, and contradicting items are both kept for you to resolve.
 - **You have the last word.** Edited items are re-embedded so search uses your wording. Rejected items are excluded from search and answers, and a re-run of extraction never brings them back.
-- **Privacy is enforced in the query.** Search only returns memories the signed-in user owns (superusers see all).
+- **Privacy is enforced in the query.** Search and ask only use memories the signed-in user owns, superusers included. A superuser can send `"all_users": true` to search everyone's memories; anyone else sending it gets `403`.
 - **A model outage does not lose data, or work.** A file whose extraction fails is marked **Failed** with the reason. The extraction graph saves a [LangGraph checkpoint](https://langchain-ai.github.io/langgraph/concepts/persistence/) in PostgreSQL after every step, so **Retry resumes from the last finished step**: if the model was down right after a long Whisper transcription, the transcription is not run again. Checkpoints are removed once the result is stored, or when the file is deleted. Saving a story never depends on the model being up.
 - **Nothing private leaks through errors or logs.** The reason shown on a **Failed** file is limited to messages written for users (for example "The AI service is unavailable" or "Recordings can be at most 60 minutes long"); any other error shows a generic message, and the details (the Ollama address, what Ollama said, the full traceback) go to the server log only. When the model returns an item that does not fit the schema, the log says which field was wrong, not what the memory said.
 - **All prompts are in one file**, [`backend/app/core/prompt.py`](./backend/app/core/prompt.py), so the wording can be reviewed and tuned in one place.
@@ -155,8 +155,8 @@ All routes are under `/api/v1` and need a bearer token. Full details are at `/do
 | `DELETE /memories/{id}/files/{file_id}` | Delete a file and what was extracted from it |
 | `GET /memories/{id}/extracted/` | What the AI extracted (`?file_id=` for one file) |
 | `PATCH/DELETE /memories/{id}/extracted/{extracted_id}` | Edit, reject (`{"rejected": true}`) or delete an item |
-| `POST /search/` | Semantic search over extracted memories |
-| `POST /search/ask` | Answer a question and return the memories it used |
+| `POST /search/` | Semantic search over your own extracted memories (`all_users` is superuser-only) |
+| `POST /search/ask` | Answer a question from your own memories and return the ones it used (`all_users` is superuser-only) |
 
 If Ollama is unreachable the AI routes return `503` with a message saying so.
 

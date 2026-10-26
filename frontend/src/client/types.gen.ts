@@ -16,6 +16,10 @@ export type AskRequest = {
      * Memory Id
      */
     memory_id?: string | null;
+    /**
+     * All Users
+     */
+    all_users?: boolean;
 };
 
 /**
@@ -512,6 +516,10 @@ export type SearchRequest = {
      * Limit
      */
     limit?: number | null;
+    /**
+     * All Users
+     */
+    all_users?: boolean;
 };
 
 /**

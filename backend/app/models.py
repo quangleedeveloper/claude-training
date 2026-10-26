@@ -333,6 +333,8 @@ class SearchRequest(SQLModel):
     query: str = Field(min_length=1, max_length=500)
     memory_id: uuid.UUID | None = None
     limit: int | None = Field(default=None, ge=1, le=20)
+    # Superusers only: search everyone's memories instead of their own
+    all_users: bool = False
 
 
 class SearchHit(SQLModel):
@@ -350,6 +352,8 @@ class SearchResults(SQLModel):
 class AskRequest(SQLModel):
     question: str = Field(min_length=1, max_length=500)
     memory_id: uuid.UUID | None = None
+    # Superusers only: answer from everyone's memories instead of their own
+    all_users: bool = False
 
 
 class AskResponse(SQLModel):
