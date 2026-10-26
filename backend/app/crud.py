@@ -1,14 +1,18 @@
 import uuid
+from collections.abc import Sequence
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.core.security import get_password_hash, verify_password
+from app.core.storage import FileStorage
 from app.models import (
     Item,
     ItemCreate,
     Memory,
     MemoryCreate,
+    MemoryFile,
+    MemoryFileKind,
     User,
     UserCreate,
     UserUpdate,
@@ -84,3 +88,45 @@ def create_memory(
     session.commit()
     session.refresh(db_memory)
     return db_memory
+
+
+def create_memory_file(
+    *,
+    session: Session,
+    memory_id: uuid.UUID,
+    file_id: uuid.UUID,
+    filename: str,
+    content_type: str,
+    kind: MemoryFileKind,
+    size_bytes: int,
+    storage_key: str,
+) -> MemoryFile:
+    db_file = MemoryFile(
+        id=file_id,
+        memory_id=memory_id,
+        filename=filename,
+        content_type=content_type,
+        kind=kind,
+        size_bytes=size_bytes,
+        storage_key=storage_key,
+    )
+    session.add(db_file)
+    session.commit()
+    session.refresh(db_file)
+    return db_file
+
+
+def remove_memory_files(
+    *, session: Session, storage: FileStorage, memory_ids: Sequence[uuid.UUID]
+) -> None:
+    """Delete stored bytes; the rows go with their memory (DB cascade).
+
+    Call this before deleting the memories or their owner, or the files are orphaned.
+    """
+    if not memory_ids:
+        return
+    statement = select(MemoryFile.storage_key).where(
+        col(MemoryFile.memory_id).in_(memory_ids)
+    )
+    for storage_key in session.exec(statement).all():
+        storage.delete(storage_key)

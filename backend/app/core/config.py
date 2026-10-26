@@ -1,4 +1,5 @@
 import warnings
+from pathlib import Path
 from typing import Literal, Self
 
 from pydantic import (
@@ -64,6 +65,13 @@ class Settings(BaseSettings):
     EMAIL_TEST_USER: EmailStr = "test@example.com"
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
+
+    # Uploaded memory files: relative paths resolve against the backend working dir
+    UPLOAD_DIR: Path = Path("uploads")
+    MAX_IMAGE_BYTES: int = 10 * 1024 * 1024
+    MAX_AUDIO_BYTES: int = 50 * 1024 * 1024
+    MAX_VIDEO_BYTES: int = 200 * 1024 * 1024
+    MAX_FILES_PER_UPLOAD: int = 10
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

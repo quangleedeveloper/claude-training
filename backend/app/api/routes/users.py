@@ -8,12 +8,14 @@ from app import crud
 from app.api.deps import (
     CurrentUser,
     SessionDep,
+    StorageDep,
     get_current_active_superuser,
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import (
     Item,
+    Memory,
     Message,
     UpdatePassword,
     User,
@@ -27,6 +29,14 @@ from app.models import (
 from app.utils import generate_new_account_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+def remove_user_memory_files(
+    session: SessionDep, storage: StorageDep, user_id: uuid.UUID
+) -> None:
+    """Delete stored uploads first: the DB cascade removes rows, not bytes."""
+    memory_ids = session.exec(select(Memory.id).where(Memory.owner_id == user_id)).all()
+    crud.remove_memory_files(session=session, storage=storage, memory_ids=memory_ids)
 
 
 @router.get(
@@ -130,7 +140,9 @@ def read_user_me(current_user: CurrentUser) -> Any:
 
 
 @router.delete("/me", response_model=Message)
-def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
+def delete_user_me(
+    session: SessionDep, current_user: CurrentUser, storage: StorageDep
+) -> Any:
     """
     Delete own user.
     """
@@ -138,6 +150,7 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
+    remove_user_memory_files(session, storage, current_user.id)
     session.delete(current_user)
     session.commit()
     return Message(message="User deleted successfully")
@@ -213,7 +226,10 @@ def update_user(
 
 @router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
 def delete_user(
-    session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
+    session: SessionDep,
+    current_user: CurrentUser,
+    storage: StorageDep,
+    user_id: uuid.UUID,
 ) -> Message:
     """
     Delete a user.
@@ -225,6 +241,7 @@ def delete_user(
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
+    remove_user_memory_files(session, storage, user_id)
     statement = delete(Item).where(col(Item.owner_id) == user_id)
     session.exec(statement)
     session.delete(user)

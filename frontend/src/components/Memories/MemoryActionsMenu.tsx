@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import DeleteMemory from "./DeleteMemory"
 import EditMemory from "./EditMemory"
+import MemoryFiles from "./MemoryFiles"
 
 interface MemoryActionsMenuProps {
   memory: MemoryPublic
@@ -28,6 +29,7 @@ export const MemoryActionsMenu = ({ memory }: MemoryActionsMenuProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <EditMemory memory={memory} onSuccess={() => setOpen(false)} />
+        <MemoryFiles memory={memory} onClose={() => setOpen(false)} />
         <DeleteMemory id={memory.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>

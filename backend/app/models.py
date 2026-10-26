@@ -1,7 +1,9 @@
 import uuid
 from datetime import UTC, datetime
+from enum import StrEnum
 
 from pydantic import EmailStr
+from sqlalchemy import BigInteger
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -133,6 +135,7 @@ class Memory(MemoryBase, table=True):
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
     owner: User | None = Relationship(back_populates="memories")
+    files: list[MemoryFile] = Relationship(back_populates="memory", cascade_delete=True)
 
 
 # Properties to return via API, id is always required
@@ -145,6 +148,70 @@ class MemoryPublic(MemoryBase):
 class MemoriesPublic(SQLModel):
     data: list[MemoryPublic]
     count: int
+
+
+class MemoryFileKind(StrEnum):
+    IMAGE = "image"
+    AUDIO = "audio"
+    VIDEO = "video"
+
+
+class MemoryFileStatus(StrEnum):
+    UPLOADED = "uploaded"
+    PROCESSING = "processing"
+    PROCESSED = "processed"
+    FAILED = "failed"
+
+
+# Database model; kind and status are stored as plain VARCHAR (not a Postgres enum)
+# so adding a value later never needs an ALTER TYPE migration
+class MemoryFile(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    memory_id: uuid.UUID = Field(
+        foreign_key="memory.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    filename: str = Field(max_length=255)
+    content_type: str = Field(max_length=100)
+    kind: str = Field(max_length=20)
+    # BigInteger: the size limits are configurable and may exceed 2 GB
+    size_bytes: int = Field(sa_type=BigInteger)
+    # Server-generated, never derived from user input
+    storage_key: str = Field(max_length=255)
+    status: str = Field(default=MemoryFileStatus.UPLOADED, max_length=20)
+    error_message: str | None = Field(default=None, max_length=500)
+    created_at: datetime | None = Field(default_factory=get_datetime_utc)
+    processed_at: datetime | None = None
+    memory: Memory | None = Relationship(back_populates="files")
+
+
+# Properties to return via API
+class MemoryFilePublic(SQLModel):
+    id: uuid.UUID
+    memory_id: uuid.UUID
+    filename: str
+    content_type: str
+    kind: MemoryFileKind
+    size_bytes: int
+    status: MemoryFileStatus
+    error_message: str | None = None
+    created_at: datetime | None = None
+    processed_at: datetime | None = None
+
+
+class MemoryFilesPublic(SQLModel):
+    data: list[MemoryFilePublic]
+    count: int
+
+
+class RejectedMemoryFile(SQLModel):
+    filename: str
+    reason: str
+
+
+# Each uploaded file succeeds or is rejected on its own
+class MemoryFilesUploadResult(SQLModel):
+    uploaded: list[MemoryFilePublic]
+    rejected: list[RejectedMemoryFile]
 
 
 # Generic message

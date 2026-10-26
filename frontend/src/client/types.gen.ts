@@ -35,6 +35,16 @@ export type Body_login_login_access_token = {
 };
 
 /**
+ * Body_memory_files-upload_memory_files
+ */
+export type Body_memory_files_upload_memory_files = {
+    /**
+     * Files
+     */
+    files: Array<Blob | File>;
+};
+
+/**
  * HTTPValidationError
  */
 export type HTTPValidationError = {
@@ -145,6 +155,84 @@ export type MemoryCreate = {
 };
 
 /**
+ * MemoryFileKind
+ */
+export type MemoryFileKind = 'image' | 'audio' | 'video';
+
+/**
+ * MemoryFilePublic
+ */
+export type MemoryFilePublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Memory Id
+     */
+    memory_id: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Content Type
+     */
+    content_type: string;
+    kind: MemoryFileKind;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    status: MemoryFileStatus;
+    /**
+     * Error Message
+     */
+    error_message?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Processed At
+     */
+    processed_at?: string | null;
+};
+
+/**
+ * MemoryFileStatus
+ */
+export type MemoryFileStatus = 'uploaded' | 'processing' | 'processed' | 'failed';
+
+/**
+ * MemoryFilesPublic
+ */
+export type MemoryFilesPublic = {
+    /**
+     * Data
+     */
+    data: Array<MemoryFilePublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * MemoryFilesUploadResult
+ */
+export type MemoryFilesUploadResult = {
+    /**
+     * Uploaded
+     */
+    uploaded: Array<MemoryFilePublic>;
+    /**
+     * Rejected
+     */
+    rejected: Array<RejectedMemoryFile>;
+};
+
+/**
  * MemoryPublic
  */
 export type MemoryPublic = {
@@ -236,6 +324,20 @@ export type PrivateUserCreate = {
      * Is Verified
      */
     is_verified?: boolean;
+};
+
+/**
+ * RejectedMemoryFile
+ */
+export type RejectedMemoryFile = {
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Reason
+     */
+    reason: string;
 };
 
 /**
@@ -1149,6 +1251,168 @@ export type memoriesUpdateMemoryResponses = {
 };
 
 export type memoriesUpdateMemoryResponse = memoriesUpdateMemoryResponses[keyof memoriesUpdateMemoryResponses];
+
+export type memoryFilesReadMemoryFilesData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/';
+};
+
+export type memoryFilesReadMemoryFilesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesReadMemoryFilesError = memoryFilesReadMemoryFilesErrors[keyof memoryFilesReadMemoryFilesErrors];
+
+export type memoryFilesReadMemoryFilesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryFilesPublic;
+};
+
+export type memoryFilesReadMemoryFilesResponse = memoryFilesReadMemoryFilesResponses[keyof memoryFilesReadMemoryFilesResponses];
+
+export type memoryFilesUploadMemoryFilesData = {
+    body: Body_memory_files_upload_memory_files;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/';
+};
+
+export type memoryFilesUploadMemoryFilesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesUploadMemoryFilesError = memoryFilesUploadMemoryFilesErrors[keyof memoryFilesUploadMemoryFilesErrors];
+
+export type memoryFilesUploadMemoryFilesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryFilesUploadResult;
+};
+
+export type memoryFilesUploadMemoryFilesResponse = memoryFilesUploadMemoryFilesResponses[keyof memoryFilesUploadMemoryFilesResponses];
+
+export type memoryFilesReadMemoryFileContentData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/{file_id}/content';
+};
+
+export type memoryFilesReadMemoryFileContentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesReadMemoryFileContentError = memoryFilesReadMemoryFileContentErrors[keyof memoryFilesReadMemoryFileContentErrors];
+
+export type memoryFilesReadMemoryFileContentResponses = {
+    /**
+     * Response Memory Files-Read Memory File Content
+     *
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type memoryFilesRetryMemoryFileData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/{file_id}/retry';
+};
+
+export type memoryFilesRetryMemoryFileErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesRetryMemoryFileError = memoryFilesRetryMemoryFileErrors[keyof memoryFilesRetryMemoryFileErrors];
+
+export type memoryFilesRetryMemoryFileResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryFilePublic;
+};
+
+export type memoryFilesRetryMemoryFileResponse = memoryFilesRetryMemoryFileResponses[keyof memoryFilesRetryMemoryFileResponses];
+
+export type memoryFilesDeleteMemoryFileData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/{file_id}';
+};
+
+export type memoryFilesDeleteMemoryFileErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesDeleteMemoryFileError = memoryFilesDeleteMemoryFileErrors[keyof memoryFilesDeleteMemoryFileErrors];
+
+export type memoryFilesDeleteMemoryFileResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type memoryFilesDeleteMemoryFileResponse = memoryFilesDeleteMemoryFileResponses[keyof memoryFilesDeleteMemoryFileResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;
