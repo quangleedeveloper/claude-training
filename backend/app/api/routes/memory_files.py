@@ -7,7 +7,14 @@ from fastapi.responses import FileResponse
 from sqlmodel import Session, col, func, select
 
 from app import crud
-from app.api.deps import CurrentUser, MediaProcessorDep, SessionDep, StorageDep
+from app.api.deps import (
+    CurrentUser,
+    LLMClientDep,
+    MediaProcessorDep,
+    SessionDep,
+    StorageDep,
+)
+from app.core.checkpoint import clear_thread
 from app.core.config import settings
 from app.core.storage import FileTooLargeError
 from app.models import (
@@ -88,6 +95,7 @@ def upload_memory_files(
     current_user: CurrentUser,
     storage: StorageDep,
     processor: MediaProcessorDep,
+    llm: LLMClientDep,
     background_tasks: BackgroundTasks,
     memory_id: uuid.UUID,
     files: Annotated[list[UploadFile], File()],
@@ -149,7 +157,7 @@ def upload_memory_files(
 
     for memory_file in uploaded:
         background_tasks.add_task(
-            process_memory_file, memory_file.id, processor, storage
+            process_memory_file, memory_file.id, processor, storage, llm
         )
     return MemoryFilesUploadResult(
         uploaded=[MemoryFilePublic.model_validate(f) for f in uploaded],
@@ -187,6 +195,7 @@ def retry_memory_file(
     current_user: CurrentUser,
     storage: StorageDep,
     processor: MediaProcessorDep,
+    llm: LLMClientDep,
     background_tasks: BackgroundTasks,
     memory_id: uuid.UUID,
     file_id: uuid.UUID,
@@ -202,7 +211,9 @@ def retry_memory_file(
     session.add(memory_file)
     session.commit()
     session.refresh(memory_file)
-    background_tasks.add_task(process_memory_file, memory_file.id, processor, storage)
+    background_tasks.add_task(
+        process_memory_file, memory_file.id, processor, storage, llm
+    )
     return memory_file
 
 
@@ -222,4 +233,5 @@ def delete_memory_file(
     session.delete(memory_file)
     session.commit()
     storage.delete(storage_key)
+    clear_thread(str(file_id))
     return Message(message="File deleted successfully")

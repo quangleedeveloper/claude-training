@@ -73,6 +73,37 @@ class Settings(BaseSettings):
     MAX_VIDEO_BYTES: int = 200 * 1024 * 1024
     MAX_FILES_PER_UPLOAD: int = 10
 
+    # "fake" swaps the models for deterministic stand-ins so the app can be driven
+    # end to end (Playwright) where there is no Ollama. It is development only.
+    AI_BACKEND: Literal["ollama", "fake"] = "ollama"
+
+    @model_validator(mode="after")
+    def _fake_ai_only_in_development(self) -> Self:
+        if self.AI_BACKEND == "fake" and self.FASTAPI_ENV != "development":
+            raise ValueError(
+                "AI_BACKEND=fake answers with canned text and is only allowed "
+                "when FASTAPI_ENV=development"
+            )
+        return self
+
+    # Local Ollama: chat model extracts and answers, embedding model powers search,
+    # vision model describes photos. Whisper transcribes audio and video.
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_CHAT_MODEL: str = "llama3.1"
+    OLLAMA_EMBED_MODEL: str = "nomic-embed-text"
+    OLLAMA_VISION_MODEL: str = "llava:7b"
+    # Local models are slow on CPU, so be generous before giving up
+    OLLAMA_TIMEOUT_SECONDS: float = 300
+    WHISPER_MODEL: str = "base"
+    # Longer recordings are refused: file size limits do not bound compressed audio
+    MAX_MEDIA_SECONDS: float = 3600
+    # How many extracted memories are retrieved to answer a question
+    RETRIEVAL_TOP_K: int = 5
+    # Cosine similarity a retrieved memory needs before it may be used in an answer
+    MIN_RELEVANCE_SCORE: float = 0.45
+    # Extracted items the model is less sure about than this are dropped
+    MIN_EXTRACTION_CONFIDENCE: float = 0.3
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (

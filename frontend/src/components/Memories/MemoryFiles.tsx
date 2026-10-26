@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Paperclip, RotateCw } from "lucide-react"
-import { type ChangeEvent, useState } from "react"
+import { RotateCw } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
 import {
   type MemoryFilePublic,
@@ -20,9 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -35,13 +32,15 @@ import {
 } from "@/components/ui/table"
 import useCustomToast from "@/hooks/useCustomToast"
 import {
-  ACCEPTED_EXTENSIONS,
   formatBytes,
   MAX_FILES_PER_UPLOAD,
-  validateMediaFile,
+  partitionMediaFiles,
 } from "@/lib/mediaLimits"
 import { handleError } from "@/utils"
 import DeleteMemoryFile from "./DeleteMemoryFile"
+import ExtractedMemories from "./ExtractedMemories"
+import FileDropzone from "./FileDropzone"
+import PreviewMemoryFile from "./PreviewMemoryFile"
 
 const STATUS_LABELS: Record<MemoryFileStatus, string> = {
   uploaded: "Uploaded",
@@ -68,11 +67,13 @@ const isPending = (file: MemoryFilePublic) =>
 
 interface MemoryFilesProps {
   memory: MemoryPublic
-  onClose: () => void
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-const MemoryFiles = ({ memory, onClose }: MemoryFilesProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+// Rendered outside the actions dropdown: the native file picker blurs the window,
+// which would dismiss the dropdown and unmount a dialog living inside it.
+const MemoryFiles = ({ memory, isOpen, onOpenChange }: MemoryFilesProps) => {
   const [selected, setSelected] = useState<File[]>([])
   const [rejected, setRejected] = useState<RejectedMemoryFile[]>([])
   const [progress, setProgress] = useState(0)
@@ -122,6 +123,19 @@ const MemoryFiles = ({ memory, onClose }: MemoryFilesProps) => {
     },
   })
 
+  // Extraction runs after a file settles, so refresh what the AI found once the
+  // last pending file is done
+  const hasPending = files?.data.some(isPending) ?? false
+  const wasPending = useRef(false)
+  useEffect(() => {
+    if (wasPending.current && !hasPending) {
+      queryClient.invalidateQueries({
+        queryKey: ["memories", memory.id, "extracted"],
+      })
+    }
+    wasPending.current = hasPending
+  }, [hasPending, memory.id, queryClient])
+
   const retryMutation = useMutation({
     mutationFn: (fileId: string) =>
       MemoryFilesService.retryMemoryFile({
@@ -133,43 +147,23 @@ const MemoryFiles = ({ memory, onClose }: MemoryFilesProps) => {
     },
   })
 
-  const onFilesChosen = (event: ChangeEvent<HTMLInputElement>) => {
-    const valid: File[] = []
-    const invalid: RejectedMemoryFile[] = []
-    for (const file of Array.from(event.target.files ?? [])) {
-      const reason =
-        valid.length >= MAX_FILES_PER_UPLOAD
-          ? `At most ${MAX_FILES_PER_UPLOAD} files per upload`
-          : validateMediaFile(file)
-      if (reason) {
-        invalid.push({ filename: file.name, reason })
-      } else {
-        valid.push(file)
-      }
-    }
+  const chooseFiles = (chosen: File[]) => {
+    const { valid, rejected: invalid } = partitionMediaFiles(chosen)
     setSelected(valid)
     setRejected(invalid)
   }
 
-  const onOpenChange = (open: boolean) => {
-    setIsOpen(open)
+  const handleOpenChange = (open: boolean) => {
+    onOpenChange(open)
     if (!open) {
       setSelected([])
       setRejected([])
-      onClose()
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Paperclip />
-        Manage Files
-      </DropdownMenuItem>
-      <DialogContent className="sm:max-w-2xl">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Files for {memory.title}</DialogTitle>
           <DialogDescription>
@@ -178,17 +172,12 @@ const MemoryFiles = ({ memory, onClose }: MemoryFilesProps) => {
         </DialogHeader>
 
         <div className="grid gap-3">
-          <Label htmlFor={`memory-files-${memory.id}`}>
-            Photos, videos and audio
-          </Label>
-          <Input
-            key={inputKey}
+          <FileDropzone
             id={`memory-files-${memory.id}`}
-            type="file"
-            multiple
-            accept={ACCEPTED_EXTENSIONS}
-            onChange={onFilesChosen}
+            selected={selected}
+            onFilesChosen={chooseFiles}
             disabled={uploadMutation.isPending}
+            inputKey={inputKey}
           />
           <p className="text-xs text-muted-foreground">
             Images up to 10 MB, audio up to 50 MB, video up to 200 MB, at most{" "}
@@ -262,6 +251,7 @@ const MemoryFiles = ({ memory, onClose }: MemoryFilesProps) => {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
+                      <PreviewMemoryFile memoryId={memory.id} file={file} />
                       {file.status === "failed" && (
                         <Button
                           variant="ghost"
@@ -287,6 +277,15 @@ const MemoryFiles = ({ memory, onClose }: MemoryFilesProps) => {
             </TableBody>
           </Table>
         )}
+
+        <div className="grid gap-2">
+          <h3 className="text-sm font-semibold">What the AI found</h3>
+          <p className="text-xs text-muted-foreground">
+            Review these. Edit anything that is wrong, or reject it to keep it
+            out of search and answers.
+          </p>
+          <ExtractedMemories memoryId={memory.id} files={files?.data ?? []} />
+        </div>
 
         <DialogFooter>
           <DialogClose asChild>

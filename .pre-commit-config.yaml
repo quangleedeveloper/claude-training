@@ -47,7 +47,9 @@ repos:
 
       - id: local-mypy
         name: mypy check
-        entry: uv run mypy backend/app
+        # The strict settings and stub overrides live in backend/pyproject.toml, which
+        # mypy does not find when run from the repo root
+        entry: uv run mypy --config-file backend/pyproject.toml backend/app
         require_serial: true
         language: unsupported
         pass_filenames: false

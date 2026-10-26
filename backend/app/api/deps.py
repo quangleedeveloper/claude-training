@@ -11,6 +11,7 @@ from sqlmodel import Session
 from app.core import security
 from app.core.config import settings
 from app.core.db import engine
+from app.core.llm import LLMClient, get_llm_client
 from app.core.storage import FileStorage, get_storage
 from app.models import TokenPayload, User
 from app.services.processing import MediaProcessor, get_media_processor
@@ -29,6 +30,7 @@ SessionDep = Annotated[Session, Depends(get_db)]
 TokenDep = Annotated[str, Depends(reusable_oauth2)]
 StorageDep = Annotated[FileStorage, Depends(get_storage)]
 MediaProcessorDep = Annotated[MediaProcessor, Depends(get_media_processor)]
+LLMClientDep = Annotated[LLMClient, Depends(get_llm_client)]
 
 
 def get_current_user(session: SessionDep, token: TokenDep) -> User:

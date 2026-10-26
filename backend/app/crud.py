@@ -4,6 +4,7 @@ from typing import Any
 
 from sqlmodel import Session, col, select
 
+from app.core.checkpoint import clear_thread
 from app.core.security import get_password_hash, verify_password
 from app.core.storage import FileStorage
 from app.models import (
@@ -119,14 +120,16 @@ def create_memory_file(
 def remove_memory_files(
     *, session: Session, storage: FileStorage, memory_ids: Sequence[uuid.UUID]
 ) -> None:
-    """Delete stored bytes; the rows go with their memory (DB cascade).
+    """Delete stored bytes and saved processing progress; the rows go with their
+    memory (DB cascade).
 
     Call this before deleting the memories or their owner, or the files are orphaned.
     """
     if not memory_ids:
         return
-    statement = select(MemoryFile.storage_key).where(
+    statement = select(MemoryFile.id, MemoryFile.storage_key).where(
         col(MemoryFile.memory_id).in_(memory_ids)
     )
-    for storage_key in session.exec(statement).all():
+    for file_id, storage_key in session.exec(statement).all():
         storage.delete(storage_key)
+        clear_thread(str(file_id))

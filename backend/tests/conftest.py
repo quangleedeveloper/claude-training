@@ -3,13 +3,17 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlmodel import Session, delete
 
-from app.api.deps import get_media_processor
+from app.core.checkpoint import setup_checkpoint_tables
 from app.core.config import settings
 from app.core.db import engine, init_db
+from app.core.llm import get_llm_client
 from app.main import app
-from app.models import Item, Memory, MemoryFile, User
+from app.models import ExtractedMemory, Item, Memory, MemoryFile, User
+from app.services.processing import get_media_processor
+from tests.utils.llm import FakeLLMClient
 from tests.utils.memory_file import FakeMediaProcessor
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
@@ -33,11 +37,25 @@ def media_processor() -> Generator[FakeMediaProcessor]:
     app.dependency_overrides.pop(get_media_processor, None)
 
 
+@pytest.fixture(autouse=True)
+def llm_client() -> Generator[FakeLLMClient]:
+    """Tests never call Ollama; set `.error` to simulate it being down."""
+    llm = FakeLLMClient()
+    app.dependency_overrides[get_llm_client] = lambda: llm
+    yield llm
+    app.dependency_overrides.pop(get_llm_client, None)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def db() -> Generator[Session]:
+    # Before the session below opens a transaction, which would block the index build
+    setup_checkpoint_tables()
     with Session(engine) as session:
         init_db(session)
         yield session
+        session.execute(delete(ExtractedMemory))
+        for table in ("checkpoint_writes", "checkpoint_blobs", "checkpoints"):
+            session.execute(text(f"DELETE FROM {table}"))
         statement = delete(MemoryFile)
         session.execute(statement)
         statement = delete(Memory)
