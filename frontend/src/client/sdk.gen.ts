@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, memoriesCreateMemoryData, memoriesCreateMemoryErrors, memoriesCreateMemoryResponses, memoriesDeleteMemoryData, memoriesDeleteMemoryErrors, memoriesDeleteMemoryResponses, memoriesReadMemoriesData, memoriesReadMemoriesErrors, memoriesReadMemoriesResponses, memoriesReadMemoryData, memoriesReadMemoryErrors, memoriesReadMemoryResponses, memoriesUpdateMemoryData, memoriesUpdateMemoryErrors, memoriesUpdateMemoryResponses, memoryFilesDeleteMemoryFileData, memoryFilesDeleteMemoryFileErrors, memoryFilesDeleteMemoryFileResponses, memoryFilesReadMemoryFileContentData, memoryFilesReadMemoryFileContentErrors, memoryFilesReadMemoryFileContentResponses, memoryFilesReadMemoryFilesData, memoryFilesReadMemoryFilesErrors, memoryFilesReadMemoryFilesResponses, memoryFilesRetryMemoryFileData, memoryFilesRetryMemoryFileErrors, memoryFilesRetryMemoryFileResponses, memoryFilesUploadMemoryFilesData, memoryFilesUploadMemoryFilesErrors, memoryFilesUploadMemoryFilesResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
+import type { extractedMemoriesDeleteExtractedMemoryData, extractedMemoriesDeleteExtractedMemoryErrors, extractedMemoriesDeleteExtractedMemoryResponses, extractedMemoriesReadExtractedMemoriesData, extractedMemoriesReadExtractedMemoriesErrors, extractedMemoriesReadExtractedMemoriesResponses, extractedMemoriesUpdateExtractedMemoryData, extractedMemoriesUpdateExtractedMemoryErrors, extractedMemoriesUpdateExtractedMemoryResponses, itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, memoriesCreateMemoryData, memoriesCreateMemoryErrors, memoriesCreateMemoryResponses, memoriesDeleteMemoryData, memoriesDeleteMemoryErrors, memoriesDeleteMemoryResponses, memoriesReadMemoriesData, memoriesReadMemoriesErrors, memoriesReadMemoriesResponses, memoriesReadMemoryData, memoriesReadMemoryErrors, memoriesReadMemoryResponses, memoriesUpdateMemoryData, memoriesUpdateMemoryErrors, memoriesUpdateMemoryResponses, memoryFilesDeleteMemoryFileData, memoryFilesDeleteMemoryFileErrors, memoryFilesDeleteMemoryFileResponses, memoryFilesReadMemoryFileContentData, memoryFilesReadMemoryFileContentErrors, memoryFilesReadMemoryFileContentResponses, memoryFilesReadMemoryFilesData, memoryFilesReadMemoryFilesErrors, memoryFilesReadMemoryFilesResponses, memoryFilesRetryMemoryFileData, memoryFilesRetryMemoryFileErrors, memoryFilesRetryMemoryFileResponses, memoryFilesUploadMemoryFilesData, memoryFilesUploadMemoryFilesErrors, memoryFilesUploadMemoryFilesResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, searchAskMemoriesData, searchAskMemoriesErrors, searchAskMemoriesResponses, searchSearchMemoriesData, searchSearchMemoriesErrors, searchSearchMemoriesResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -517,6 +517,92 @@ export class MemoryFilesService {
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/api/v1/memories/{memory_id}/files/{file_id}',
             ...options
+        });
+    }
+}
+
+export class ExtractedMemoriesService {
+    /**
+     * Read Extracted Memories
+     *
+     * List what the AI extracted from a memory, optionally for one file.
+     */
+    public static readExtractedMemories<ThrowOnError extends boolean = true>(options: Options<extractedMemoriesReadExtractedMemoriesData, ThrowOnError>) {
+        return (options.client ?? client).get<extractedMemoriesReadExtractedMemoriesResponses, extractedMemoriesReadExtractedMemoriesErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/memories/{memory_id}/extracted/',
+            ...options
+        });
+    }
+    
+    /**
+     * Delete Extracted Memory
+     *
+     * Permanently delete an extracted memory.
+     */
+    public static deleteExtractedMemory<ThrowOnError extends boolean = true>(options: Options<extractedMemoriesDeleteExtractedMemoryData, ThrowOnError>) {
+        return (options.client ?? client).delete<extractedMemoriesDeleteExtractedMemoryResponses, extractedMemoriesDeleteExtractedMemoryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/memories/{memory_id}/extracted/{extracted_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Extracted Memory
+     *
+     * Edit an extracted memory, or reject it so it no longer appears in search.
+     */
+    public static updateExtractedMemory<ThrowOnError extends boolean = true>(options: Options<extractedMemoriesUpdateExtractedMemoryData, ThrowOnError>) {
+        return (options.client ?? client).patch<extractedMemoriesUpdateExtractedMemoryResponses, extractedMemoriesUpdateExtractedMemoryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/memories/{memory_id}/extracted/{extracted_id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+export class SearchService {
+    /**
+     * Search Memories
+     *
+     * Find extracted memories that match a free-text query.
+     */
+    public static searchMemories<ThrowOnError extends boolean = true>(options: Options<searchSearchMemoriesData, ThrowOnError>) {
+        return (options.client ?? client).post<searchSearchMemoriesResponses, searchSearchMemoriesErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/search/',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Ask Memories
+     *
+     * Answer a question from the extracted memories, citing the ones it used.
+     */
+    public static askMemories<ThrowOnError extends boolean = true>(options: Options<searchAskMemoriesData, ThrowOnError>) {
+        return (options.client ?? client).post<searchAskMemoriesResponses, searchAskMemoriesErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/search/ask',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
         });
     }
 }
