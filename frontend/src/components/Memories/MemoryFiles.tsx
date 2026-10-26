@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { RotateCw } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import {
   type MemoryFilePublic,
@@ -38,6 +38,7 @@ import {
 } from "@/lib/mediaLimits"
 import { handleError } from "@/utils"
 import DeleteMemoryFile from "./DeleteMemoryFile"
+import ExtractedMemories from "./ExtractedMemories"
 import FileDropzone from "./FileDropzone"
 import PreviewMemoryFile from "./PreviewMemoryFile"
 
@@ -122,6 +123,19 @@ const MemoryFiles = ({ memory, isOpen, onOpenChange }: MemoryFilesProps) => {
     },
   })
 
+  // Extraction runs after a file settles, so refresh what the AI found once the
+  // last pending file is done
+  const hasPending = files?.data.some(isPending) ?? false
+  const wasPending = useRef(false)
+  useEffect(() => {
+    if (wasPending.current && !hasPending) {
+      queryClient.invalidateQueries({
+        queryKey: ["memories", memory.id, "extracted"],
+      })
+    }
+    wasPending.current = hasPending
+  }, [hasPending, memory.id, queryClient])
+
   const retryMutation = useMutation({
     mutationFn: (fileId: string) =>
       MemoryFilesService.retryMemoryFile({
@@ -149,7 +163,7 @@ const MemoryFiles = ({ memory, isOpen, onOpenChange }: MemoryFilesProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Files for {memory.title}</DialogTitle>
           <DialogDescription>
@@ -263,6 +277,15 @@ const MemoryFiles = ({ memory, isOpen, onOpenChange }: MemoryFilesProps) => {
             </TableBody>
           </Table>
         )}
+
+        <div className="grid gap-2">
+          <h3 className="text-sm font-semibold">What the AI found</h3>
+          <p className="text-xs text-muted-foreground">
+            Review these. Edit anything that is wrong, or reject it to keep it
+            out of search and answers.
+          </p>
+          <ExtractedMemories memoryId={memory.id} files={files?.data ?? []} />
+        </div>
 
         <DialogFooter>
           <DialogClose asChild>
