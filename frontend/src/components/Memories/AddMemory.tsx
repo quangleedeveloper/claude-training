@@ -5,7 +5,11 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { MemoriesService, type MemoryCreate } from "@/client"
+import {
+  MemoriesService,
+  type MemoryCreate,
+  MemoryFilesService,
+} from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -29,7 +33,9 @@ import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
+import { MAX_FILES_PER_UPLOAD, partitionMediaFiles } from "@/lib/mediaLimits"
 import { handleError } from "@/utils"
+import FileDropzone from "./FileDropzone"
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
@@ -44,6 +50,11 @@ type FormData = z.infer<typeof formSchema>
 
 const AddMemory = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const [selected, setSelected] = useState<File[]>([])
+  const [rejected, setRejected] = useState<
+    { filename: string; reason: string }[]
+  >([])
+  const [inputKey, setInputKey] = useState(0)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
@@ -58,12 +69,45 @@ const AddMemory = () => {
     },
   })
 
+  const resetFiles = () => {
+    setSelected([])
+    setRejected([])
+    setInputKey((key) => key + 1)
+  }
+
   const mutation = useMutation({
-    mutationFn: (data: MemoryCreate) =>
-      MemoriesService.createMemory({ body: data }),
-    onSuccess: () => {
+    mutationFn: async ({
+      memory,
+      files,
+    }: {
+      memory: MemoryCreate
+      files: File[]
+    }) => {
+      const { data: created } = await MemoriesService.createMemory({
+        body: memory,
+      })
+      if (files.length === 0) return { uploadError: null }
+      // The memory already exists at this point, so a failed upload must not
+      // fail the whole save; the user can retry from Manage Files.
+      try {
+        await MemoryFilesService.uploadMemoryFiles({
+          path: { memory_id: created.id },
+          body: { files },
+        })
+        return { uploadError: null }
+      } catch (error) {
+        return { uploadError: error }
+      }
+    },
+    onSuccess: ({ uploadError }) => {
       showSuccessToast("Memory created successfully")
+      if (uploadError) {
+        showErrorToast(
+          "Memory saved, but its files failed to upload. Add them from Manage Files.",
+        )
+      }
       form.reset()
+      resetFiles()
       setIsOpen(false)
     },
     onError: handleError.bind(showErrorToast),
@@ -72,19 +116,30 @@ const AddMemory = () => {
     },
   })
 
+  const chooseFiles = (chosen: File[]) => {
+    const { valid, rejected: invalid } = partitionMediaFiles(chosen)
+    setSelected(valid)
+    setRejected(invalid)
+  }
+
   const onSubmit = (data: FormData) => {
-    mutation.mutate(data)
+    mutation.mutate({ memory: data, files: selected })
+  }
+
+  const onOpenChange = (open: boolean) => {
+    setIsOpen(open)
+    if (!open) resetFiles()
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button className="my-4">
           <Plus className="mr-2" />
           Add Memory
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add Memory</DialogTitle>
           <DialogDescription>
@@ -155,6 +210,33 @@ const AddMemory = () => {
                   </FormItem>
                 )}
               />
+
+              <div className="grid gap-2">
+                <FileDropzone
+                  id="add-memory-files"
+                  selected={selected}
+                  onFilesChosen={chooseFiles}
+                  disabled={mutation.isPending}
+                  inputKey={inputKey}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional. Images up to 10 MB, audio up to 50 MB, video up to
+                  200 MB, at most {MAX_FILES_PER_UPLOAD} files.
+                </p>
+                {rejected.length > 0 && (
+                  <ul
+                    className="rounded-md border border-destructive/50 p-3 text-sm text-destructive"
+                    aria-label="Files not selected"
+                  >
+                    {rejected.map((file, index) => (
+                      <li key={`${file.filename}-${index}`}>
+                        <span className="font-medium">{file.filename}</span>:{" "}
+                        {file.reason}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             <DialogFooter>

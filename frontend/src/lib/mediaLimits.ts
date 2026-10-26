@@ -21,6 +21,27 @@ export function formatBytes(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
+// Splits a batch into files that can be uploaded and files rejected with a reason
+export function partitionMediaFiles(chosen: File[]): {
+  valid: File[]
+  rejected: { filename: string; reason: string }[]
+} {
+  const valid: File[] = []
+  const rejected: { filename: string; reason: string }[] = []
+  for (const file of chosen) {
+    const reason =
+      valid.length >= MAX_FILES_PER_UPLOAD
+        ? `At most ${MAX_FILES_PER_UPLOAD} files per upload`
+        : validateMediaFile(file)
+    if (reason) {
+      rejected.push({ filename: file.name, reason })
+    } else {
+      valid.push(file)
+    }
+  }
+  return { valid, rejected }
+}
+
 export function validateMediaFile(file: File): string | null {
   const dot = file.name.lastIndexOf(".")
   const extension = dot >= 0 ? file.name.slice(dot).toLowerCase() : ""
