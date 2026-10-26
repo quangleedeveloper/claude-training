@@ -133,7 +133,7 @@ AI settings live in `.env` (see `.env.example`). Inside Docker the backend reach
 | `OLLAMA_VISION_MODEL` | `llava:7b` | Describes photos |
 | `OLLAMA_TIMEOUT_SECONDS` | `300` | Local models are slow on CPU |
 | `WHISPER_MODEL` | `base` | Speech-to-text size (`tiny` … `large-v3`) |
-| `MAX_MEDIA_SECONDS` | `3600` | Longest audio or video that will be transcribed. File size limits do not bound length, and Whisper on a CPU is slow, so longer recordings are refused |
+| `MAX_MEDIA_SECONDS` | `3600` | Longest audio or video that will be transcribed. File size limits do not bound length, and Whisper on a CPU is slow, so longer recordings are refused. It is checked on the file header and again while decoding, so a file that misreports its length is stopped too |
 | `RETRIEVAL_TOP_K` | `5` | Memories retrieved per question |
 | `MIN_RELEVANCE_SCORE` | `0.45` | Minimum similarity for a memory to be used in an answer |
 | `MIN_EXTRACTION_CONFIDENCE` | `0.3` | Extracted items below this are dropped |
