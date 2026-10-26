@@ -82,6 +82,8 @@ class Settings(BaseSettings):
     # Local models are slow on CPU, so be generous before giving up
     OLLAMA_TIMEOUT_SECONDS: float = 300
     WHISPER_MODEL: str = "base"
+    # Longer recordings are refused: file size limits do not bound compressed audio
+    MAX_MEDIA_SECONDS: float = 3600
     # How many extracted memories are retrieved to answer a question
     RETRIEVAL_TOP_K: int = 5
     # Cosine similarity a retrieved memory needs before it may be used in an answer

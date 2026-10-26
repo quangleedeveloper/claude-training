@@ -6,6 +6,7 @@ from sqlmodel import Session
 
 from app.core.checkpoint import clear_thread, open_checkpointer
 from app.core.db import engine
+from app.core.errors import UserFacingError
 from app.core.llm import LLMClient, get_llm_client
 from app.core.storage import FileStorage
 from app.models import (
@@ -27,6 +28,8 @@ from app.services.extraction_graph import (
 from app.services.transcription import Transcriber, get_transcriber
 
 logger = logging.getLogger(__name__)
+
+GENERIC_FAILURE = "Processing failed. Check the server logs for details."
 
 __all__ = [
     "MediaProcessor",
@@ -96,7 +99,10 @@ def process_memory_file(
             drafts = drafts_from_state(result.get("drafts", []))
         except Exception as exc:
             logger.exception("Processing failed for memory file %s", file_id)
-            error = (str(exc) or type(exc).__name__)[:500]
+            # Only messages written for users are stored; anything else can carry
+            # server details, and is in the log above
+            error = (str(exc) if isinstance(exc, UserFacingError) else "")[:500]
+            error = error or GENERIC_FAILURE
 
         # The file may have been deleted while it was processing
         session.expire_all()

@@ -51,6 +51,7 @@ Design choices worth knowing:
 - **You have the last word.** Edited items are re-embedded so search uses your wording. Rejected items are excluded from search and answers, and a re-run of extraction never brings them back.
 - **Privacy is enforced in the query.** Search only returns memories the signed-in user owns (superusers see all).
 - **A model outage does not lose data, or work.** A file whose extraction fails is marked **Failed** with the reason. The extraction graph saves a [LangGraph checkpoint](https://langchain-ai.github.io/langgraph/concepts/persistence/) in PostgreSQL after every step, so **Retry resumes from the last finished step**: if the model was down right after a long Whisper transcription, the transcription is not run again. Checkpoints are removed once the result is stored, or when the file is deleted. Saving a story never depends on the model being up.
+- **Nothing private leaks through errors or logs.** The reason shown on a **Failed** file is limited to messages written for users (for example "The AI service is unavailable" or "Recordings can be at most 60 minutes long"); any other error shows a generic message, and the details (the Ollama address, what Ollama said, the full traceback) go to the server log only. When the model returns an item that does not fit the schema, the log says which field was wrong, not what the memory said.
 - **All prompts are in one file**, [`backend/app/core/prompt.py`](./backend/app/core/prompt.py), so the wording can be reviewed and tuned in one place.
 
 ## Technology Stack
@@ -132,6 +133,7 @@ AI settings live in `.env` (see `.env.example`). Inside Docker the backend reach
 | `OLLAMA_VISION_MODEL` | `llava:7b` | Describes photos |
 | `OLLAMA_TIMEOUT_SECONDS` | `300` | Local models are slow on CPU |
 | `WHISPER_MODEL` | `base` | Speech-to-text size (`tiny` … `large-v3`) |
+| `MAX_MEDIA_SECONDS` | `3600` | Longest audio or video that will be transcribed. File size limits do not bound length, and Whisper on a CPU is slow, so longer recordings are refused |
 | `RETRIEVAL_TOP_K` | `5` | Memories retrieved per question |
 | `MIN_RELEVANCE_SCORE` | `0.45` | Minimum similarity for a memory to be used in an answer |
 | `MIN_EXTRACTION_CONFIDENCE` | `0.3` | Extracted items below this are dropped |
@@ -189,9 +191,11 @@ Backend tests never call Ollama or Whisper: they use fakes (`backend/tests/utils
 
 | Symptom | Fix |
 |---|---|
-| A file shows **Failed**: "Could not reach Ollama" | Start Ollama. In Docker, check it is reachable from the container; on Windows Ollama may need `OLLAMA_HOST=0.0.0.0` |
-| **Failed**: "model … not found, try pulling it" | `ollama pull <model>` for the model named in the message |
-| **Failed**: embedding "must produce 768 dimensions" | Use `nomic-embed-text` or another 768-dimension model |
+| A file shows **Failed**: "The AI service is unavailable" | Start Ollama. In Docker, check it is reachable from the container; on Windows Ollama may need `OLLAMA_HOST=0.0.0.0` |
+| **Failed**: "The AI service could not handle the request" | The reason is in the server log. A missing model shows there as "model … not found, try pulling it": run `ollama pull <model>` |
+| **Failed**: "The embedding model must produce 768 dimensions" | Use `nomic-embed-text` or another 768-dimension model |
+| **Failed**: "Recordings can be at most … long" | The audio or video is longer than `MAX_MEDIA_SECONDS`. Split it, or raise the limit if the server can take the load |
+| **Failed**: "Processing failed. Check the server logs for details." | An unexpected error. The full error is in the server log (`docker compose logs backend`) |
 | Migration fails on `CREATE EXTENSION vector` | The database is not the pgvector image. Recreate `db` from `compose.yml` |
 | `relation "checkpoints" does not exist` | The LangGraph tables are created by the prestart step. Run `docker compose run --rm backend bash scripts/prestart.sh` (or `uv run bash scripts/prestart.sh`) |
 | Audio or video takes a long time the first time | Whisper is downloading its weights |

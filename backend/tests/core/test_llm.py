@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -150,33 +151,47 @@ def test_describe_image_sends_the_picture_to_the_vision_model(
     }
 
 
-def test_a_missing_model_surfaces_ollamas_explanation(
-    monkeypatch: pytest.MonkeyPatch,
+def test_an_ollama_rejection_is_logged_but_not_shown(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     fake_langchain(
         monkeypatch,
         error=ollama.ResponseError("model 'x' not found, try pulling it", 404),
     )
-    with pytest.raises(LLMError, match="try pulling it"):
-        client().answer("sys", "question")
+    with caplog.at_level(logging.ERROR, logger="app.core.llm"):
+        with pytest.raises(LLMError) as raised:
+            client().answer("sys", "question")
+
+    assert str(raised.value) == (
+        "The AI service could not handle the request. Check the server logs."
+    )
+    # What Ollama said is for whoever runs the server
+    assert "try pulling it" not in str(raised.value)
+    assert "try pulling it" in caplog.text
+    assert "HTTP 404" in caplog.text
 
 
 @pytest.mark.parametrize(
     "error", [ConnectionError("refused"), httpx.ConnectError("refused")]
 )
-def test_an_unreachable_server_says_so(
-    monkeypatch: pytest.MonkeyPatch, error: Exception
+def test_an_unreachable_server_is_reported_without_its_address(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, error: Exception
 ) -> None:
     fake_langchain(monkeypatch, error=error)
-    with pytest.raises(LLMError, match="Could not reach Ollama at http://ollama.test"):
-        client().answer("sys", "question")
+    with caplog.at_level(logging.ERROR, logger="app.core.llm"):
+        with pytest.raises(LLMError) as raised:
+            client().answer("sys", "question")
+
+    assert str(raised.value) == "The AI service is unavailable. Is Ollama running?"
+    assert BASE not in str(raised.value)
+    assert f"Could not reach Ollama at {BASE}" in caplog.text
 
 
 def test_an_unreachable_server_also_fails_embedding(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fake_langchain(monkeypatch, error=ConnectionError("refused"))
-    with pytest.raises(LLMError, match="Could not reach Ollama"):
+    with pytest.raises(LLMError, match="The AI service is unavailable"):
         client().embed(["a"])
 
 

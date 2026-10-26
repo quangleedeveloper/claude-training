@@ -111,8 +111,10 @@ def parse_items(data: dict[str, Any]) -> list[RawItem]:
     for raw in raw_items:
         try:
             item = RawItem.model_validate(raw)
-        except ValidationError:
-            logger.warning("Skipping malformed extracted item: %r", raw)
+        except ValidationError as exc:
+            # Say what was wrong, never the item itself: it is the family's own text
+            problems = [(".".join(map(str, e["loc"])), e["type"]) for e in exc.errors()]
+            logger.warning("Skipping malformed extracted item: %s", problems)
             continue
         item.content = item.content.strip()[:MAX_CONTENT_CHARS]
         item.people = [name.strip() for name in item.people if name.strip()]

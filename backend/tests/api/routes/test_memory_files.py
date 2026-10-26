@@ -9,6 +9,7 @@ from app import crud
 from app.core.config import settings
 from app.core.storage import LocalFileStorage
 from app.main import app
+from app.services.processing import GENERIC_FAILURE
 from tests.utils.memory import create_random_memory
 from tests.utils.memory_file import (
     MP3_BYTES,
@@ -281,7 +282,9 @@ def test_failed_processing_can_be_retried(
     listing = client.get(files_url(memory_id), headers=normal_user_token_headers)
     failed = listing.json()["data"][0]
     assert failed["status"] == "failed"
-    assert failed["error_message"] == "transcoder crashed"
+    # The crash text is logged; the user is only told that processing failed
+    assert failed["error_message"] == GENERIC_FAILURE
+    assert "transcoder" not in failed["error_message"]
 
     media_processor.error = None
     response = client.post(

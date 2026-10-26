@@ -1,3 +1,4 @@
+import logging
 import uuid
 from pathlib import Path
 
@@ -218,3 +219,16 @@ def test_a_leftover_finished_run_does_not_bleed_into_the_next(
 
     assert len(first["drafts"]) == 1
     assert "drafts" not in second
+
+
+def test_parse_items_logs_what_was_wrong_but_never_the_content(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    secret = "Grandma confessed the family secret"
+    with caplog.at_level(logging.WARNING, logger="app.services.extraction"):
+        parse_items(
+            {"memories": [{"category": "nonsense", "content": secret, "confidence": 1}]}
+        )
+
+    assert "category" in caplog.text
+    assert secret not in caplog.text

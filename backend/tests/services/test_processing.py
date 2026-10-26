@@ -8,6 +8,7 @@ from sqlmodel import Session, col, select
 from app.core import checkpoint
 from app.core.checkpoint import clear_thread
 from app.core.config import settings
+from app.core.errors import UserFacingError
 from app.core.storage import LocalFileStorage
 from app.models import (
     ExtractedMemory,
@@ -18,6 +19,7 @@ from app.models import (
     MemoryFileStatus,
 )
 from app.services.processing import (
+    GENERIC_FAILURE,
     ModelMediaProcessor,
     extract_memory_story,
     get_media_processor,
@@ -72,7 +74,9 @@ def test_process_memory_file_records_the_failure(
 
     db.refresh(memory_file)
     assert memory_file.status == MemoryFileStatus.FAILED
-    assert memory_file.error_message == "unreadable audio"
+    # What went wrong is logged; the user sees a message that cannot leak internals
+    assert memory_file.error_message == GENERIC_FAILURE
+    assert "unreadable audio" not in (memory_file.error_message or "")
     assert memory_file.processed_at is None
     assert extracted_for(db, memory_file.id) == []
 
@@ -310,3 +314,44 @@ def test_clearing_checkpoints_never_raises(monkeypatch: pytest.MonkeyPatch) -> N
 
     monkeypatch.setattr(checkpoint, "open_checkpointer", broken)
     clear_thread("anything")
+
+
+def test_a_user_facing_error_is_shown_as_written(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    class TooLong(UserFacingError):
+        pass
+
+    class RefusingProcessor:
+        def process(self, path: Path, kind: MemoryFileKind) -> str:
+            raise TooLong("Recordings can be at most 60 minutes long")
+
+    memory_file = create_random_memory_file(db)
+
+    process_memory_file(
+        memory_file.id,
+        RefusingProcessor(),
+        LocalFileStorage(settings.UPLOAD_DIR),
+        llm_client,
+    )
+
+    db.refresh(memory_file)
+    assert memory_file.status == MemoryFileStatus.FAILED
+    assert memory_file.error_message == "Recordings can be at most 60 minutes long"
+
+
+def test_an_unexpected_error_never_shows_server_details(
+    db: Session, media_processor: FakeMediaProcessor, llm_client: FakeLLMClient
+) -> None:
+    media_processor.error = "[Errno 2] No such file: /srv/uploads/secret/path.mp3"
+    memory_file = create_random_memory_file(db)
+
+    process_memory_file(
+        memory_file.id,
+        media_processor,
+        LocalFileStorage(settings.UPLOAD_DIR),
+        llm_client,
+    )
+
+    db.refresh(memory_file)
+    assert memory_file.error_message == GENERIC_FAILURE

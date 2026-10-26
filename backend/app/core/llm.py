@@ -12,14 +12,19 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 from app.core.config import settings
+from app.core.errors import UserFacingError
 from app.core.prompt import DESCRIBE_IMAGE_PROMPT
 from app.models import EMBEDDING_DIMENSIONS
 
 logger = logging.getLogger(__name__)
 
 
-class LLMError(Exception):
-    """The language model could not be reached or returned something unusable."""
+class LLMError(UserFacingError):
+    """The language model could not be reached or returned something unusable.
+
+    The message is shown to users, so it never names the server or repeats what
+    Ollama said; those details are logged instead.
+    """
 
 
 class LLMClient(Protocol):
@@ -49,13 +54,19 @@ class OllamaClient:
         try:
             yield
         except ollama.ResponseError as exc:
-            # Ollama explains a missing model ("try pulling it first") in the error
-            raise LLMError(f"Ollama rejected the request: {exc.error}") from exc
-        except (ConnectionError, httpx.HTTPError) as exc:
+            # Ollama explains a missing model ("try pulling it first") here, which is
+            # for whoever runs the server, not for the user
+            logger.error(
+                "Ollama rejected the request (HTTP %s): %s", exc.status_code, exc.error
+            )
             raise LLMError(
-                f"Could not reach Ollama at {self.base_url}: "
-                f"{type(exc).__name__}. Is it running?"
+                "The AI service could not handle the request. Check the server logs."
             ) from exc
+        except (ConnectionError, httpx.HTTPError) as exc:
+            logger.error(
+                "Could not reach Ollama at %s: %s", self.base_url, type(exc).__name__
+            )
+            raise LLMError("The AI service is unavailable. Is Ollama running?") from exc
 
     def _chat(
         self,
@@ -91,8 +102,7 @@ class OllamaClient:
             raise LLMError("Ollama returned the wrong number of embeddings")
         if any(len(vector) != EMBEDDING_DIMENSIONS for vector in vectors):
             raise LLMError(
-                f"Embedding model {settings.OLLAMA_EMBED_MODEL} must produce "
-                f"{EMBEDDING_DIMENSIONS} dimensions"
+                f"The embedding model must produce {EMBEDDING_DIMENSIONS} dimensions"
             )
         return vectors
 
