@@ -4,7 +4,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from sqlmodel import col, func, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app import crud
+from app.api.deps import CurrentUser, SessionDep, StorageDep
 from app.models import (
     MemoriesPublic,
     Memory,
@@ -108,7 +109,7 @@ def update_memory(
 
 @router.delete("/{id}")
 def delete_memory(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+    session: SessionDep, current_user: CurrentUser, storage: StorageDep, id: uuid.UUID
 ) -> Message:
     """
     Delete a memory.
@@ -118,6 +119,7 @@ def delete_memory(
         raise HTTPException(status_code=404, detail="Memory not found")
     if not current_user.is_superuser and (memory.owner_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
+    crud.remove_memory_files(session=session, storage=storage, memory_ids=[memory.id])
     session.delete(memory)
     session.commit()
     return Message(message="Memory deleted successfully")
