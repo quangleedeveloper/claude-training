@@ -1,11 +1,11 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from sqlmodel import col, func, select
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep, StorageDep
+from app.api.deps import CurrentUser, LLMClientDep, SessionDep, StorageDep
 from app.models import (
     MemoriesPublic,
     Memory,
@@ -14,6 +14,7 @@ from app.models import (
     MemoryUpdate,
     Message,
 )
+from app.services.processing import extract_memory_story
 
 router = APIRouter(prefix="/memories", tags=["memories"])
 
@@ -71,7 +72,12 @@ def read_memory(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -
 
 @router.post("/", response_model=MemoryPublic)
 def create_memory(
-    *, session: SessionDep, current_user: CurrentUser, memory_in: MemoryCreate
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    llm: LLMClientDep,
+    background_tasks: BackgroundTasks,
+    memory_in: MemoryCreate,
 ) -> Any:
     """
     Create new memory.
@@ -80,6 +86,7 @@ def create_memory(
     session.add(memory)
     session.commit()
     session.refresh(memory)
+    background_tasks.add_task(extract_memory_story, memory.id, llm)
     return memory
 
 
@@ -88,6 +95,8 @@ def update_memory(
     *,
     session: SessionDep,
     current_user: CurrentUser,
+    llm: LLMClientDep,
+    background_tasks: BackgroundTasks,
     id: uuid.UUID,
     memory_in: MemoryUpdate,
 ) -> Any:
@@ -104,6 +113,9 @@ def update_memory(
     session.add(memory)
     session.commit()
     session.refresh(memory)
+    # The story or the person it is about changed, so what was extracted is stale
+    if "content" in update_dict or "person_name" in update_dict:
+        background_tasks.add_task(extract_memory_story, memory.id, llm)
     return memory
 
 

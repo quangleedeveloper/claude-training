@@ -20,12 +20,14 @@ class FakeMediaProcessor:
 
     def __init__(self) -> None:
         self.error: str | None = None
+        self.text = "Grandma baked bread every Sunday."
         self.processed: list[Path] = []
 
-    def process(self, path: Path, kind: MemoryFileKind) -> None:
+    def process(self, path: Path, kind: MemoryFileKind) -> str:
         if self.error is not None:
             raise RuntimeError(self.error)
         self.processed.append(path)
+        return self.text
 
 
 def create_random_memory_file(
