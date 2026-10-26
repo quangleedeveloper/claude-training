@@ -18,7 +18,8 @@ services:
       - --log
 
   db:
-    image: postgres:18
+    # Postgres plus the pgvector extension, used to search extracted memories
+    image: pgvector/pgvector:pg18
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
       interval: 10s
@@ -64,8 +65,19 @@ services:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?Variable not set}@db:5432/app
       SENTRY_DSN: ${SENTRY_DSN:-}
       UPLOAD_DIR: /data/uploads
+      # Ollama runs on the host, not in this stack
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-llama3.1}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-llava:7b}
+      WHISPER_MODEL: ${WHISPER_MODEL:-base}
+      HF_HOME: /data/models
+    extra_hosts:
+      - host.docker.internal:host-gateway
     volumes:
       - app-uploads:/data/uploads
+      # Whisper weights are downloaded on first use; keep them across rebuilds
+      - app-models:/data/models
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
@@ -90,3 +102,4 @@ services:
 volumes:
   app-db-data:
   app-uploads:
+  app-models:

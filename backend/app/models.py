@@ -2,8 +2,9 @@ import uuid
 from datetime import UTC, datetime
 from enum import StrEnum
 
+from pgvector.sqlalchemy import Vector
 from pydantic import EmailStr
-from sqlalchemy import BigInteger
+from sqlalchemy import JSON, BigInteger, Column, Index, Text
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -179,6 +180,8 @@ class MemoryFile(SQLModel, table=True):
     storage_key: str = Field(max_length=255)
     status: str = Field(default=MemoryFileStatus.UPLOADED, max_length=20)
     error_message: str | None = Field(default=None, max_length=500)
+    # Transcript (audio/video) or caption (image) the extracted memories came from
+    extracted_text: str | None = Field(default=None, sa_type=Text)
     created_at: datetime | None = Field(default_factory=get_datetime_utc)
     processed_at: datetime | None = None
     memory: Memory | None = Relationship(back_populates="files")
@@ -194,6 +197,7 @@ class MemoryFilePublic(SQLModel):
     size_bytes: int
     status: MemoryFileStatus
     error_message: str | None = None
+    extracted_text: str | None = None
     created_at: datetime | None = None
     processed_at: datetime | None = None
 
@@ -212,6 +216,130 @@ class RejectedMemoryFile(SQLModel):
 class MemoryFilesUploadResult(SQLModel):
     uploaded: list[MemoryFilePublic]
     rejected: list[RejectedMemoryFile]
+
+
+# Must match the embedding model's output size (nomic-embed-text is 768)
+EMBEDDING_DIMENSIONS = 768
+
+
+class ExtractedCategory(StrEnum):
+    EVENT = "event"
+    PERSON = "person"
+    PLACE = "place"
+    FACT = "fact"
+    QUOTE = "quote"
+
+
+class ExtractedStatus(StrEnum):
+    ACTIVE = "active"
+    EDITED = "edited"
+    REJECTED = "rejected"
+
+
+class ExtractedSource(StrEnum):
+    STORY = "story"
+    IMAGE = "image"
+    AUDIO = "audio"
+    VIDEO = "video"
+
+
+# One fact the AI pulled out of a story or an uploaded file. Dates stay free text
+# ("summer 1998") because the source is often vague or contradicts another item;
+# `confidence` tells the reviewer how far to trust it. Enums are plain VARCHAR.
+class ExtractedMemory(SQLModel, table=True):
+    # Approximate nearest-neighbour index for cosine search (see retrieval.py)
+    __table_args__ = (
+        Index(
+            "ix_extractedmemory_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_with={"m": 16, "ef_construction": 64},
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    memory_id: uuid.UUID = Field(
+        foreign_key="memory.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    # None when the item came from the memory's written story
+    file_id: uuid.UUID | None = Field(
+        default=None, foreign_key="memoryfile.id", ondelete="CASCADE", index=True
+    )
+    category: str = Field(max_length=20)
+    content: str = Field(max_length=2000)
+    people: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    event_date_text: str | None = Field(default=None, max_length=100)
+    location: str | None = Field(default=None, max_length=255)
+    confidence: float
+    status: str = Field(default=ExtractedStatus.ACTIVE, max_length=20)
+    source: str = Field(max_length=20)
+    embedding: list[float] = Field(
+        sa_column=Column(Vector(EMBEDDING_DIMENSIONS), nullable=False)
+    )
+    created_at: datetime | None = Field(default_factory=get_datetime_utc)
+    updated_at: datetime | None = Field(default_factory=get_datetime_utc)
+
+
+class ExtractedMemoryPublic(SQLModel):
+    id: uuid.UUID
+    memory_id: uuid.UUID
+    file_id: uuid.UUID | None = None
+    category: ExtractedCategory
+    content: str
+    people: list[str]
+    event_date_text: str | None = None
+    location: str | None = None
+    confidence: float
+    status: ExtractedStatus
+    source: ExtractedSource
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class ExtractedMemoriesPublic(SQLModel):
+    data: list[ExtractedMemoryPublic]
+    count: int
+
+
+# Editing any field marks the item as edited; `rejected` removes it from search
+class ExtractedMemoryUpdate(SQLModel):
+    category: ExtractedCategory | None = None
+    content: str | None = Field(default=None, min_length=1, max_length=2000)
+    people: list[str] | None = None
+    event_date_text: str | None = Field(default=None, max_length=100)
+    location: str | None = Field(default=None, max_length=255)
+    rejected: bool | None = None
+
+
+class SearchRequest(SQLModel):
+    query: str = Field(min_length=1, max_length=500)
+    memory_id: uuid.UUID | None = None
+    limit: int | None = Field(default=None, ge=1, le=20)
+
+
+class SearchHit(SQLModel):
+    item: ExtractedMemoryPublic
+    memory_title: str
+    person_name: str
+    # Cosine similarity, 1 is identical
+    score: float
+
+
+class SearchResults(SQLModel):
+    data: list[SearchHit]
+
+
+class AskRequest(SQLModel):
+    question: str = Field(min_length=1, max_length=500)
+    memory_id: uuid.UUID | None = None
+
+
+class AskResponse(SQLModel):
+    answer: str
+    sources: list[SearchHit]
 
 
 # Generic message
