@@ -23,6 +23,7 @@ from app.services.extraction_graph import (
     MediaProcessor,
     build_extraction_graph,
     drafts_from_state,
+    extraction_config,
     run_extraction,
 )
 from app.services.transcription import Transcriber, get_transcriber
@@ -144,7 +145,7 @@ def extract_memory_story(memory_id: uuid.UUID, llm: LLMClient) -> None:
             "text": memory.content,
         }
     try:
-        result = build_extraction_graph(llm).invoke(initial)
+        result = build_extraction_graph(llm).invoke(initial, extraction_config())
     except Exception:
         logger.exception("Story extraction failed for memory %s", memory_id)
         return
