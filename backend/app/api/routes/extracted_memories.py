@@ -34,6 +34,21 @@ def get_extracted_or_error(
     return extracted
 
 
+def check_editable(
+    extracted: ExtractedMemory, update: dict[str, Any], rejected: bool | None
+) -> None:
+    """A rejected item can only be restored, not edited: editing it would quietly
+    bring it back into search."""
+    if (
+        update
+        and extracted.status == ExtractedStatus.REJECTED
+        and rejected is not False
+    ):
+        raise HTTPException(
+            status_code=409, detail="Restore the item before editing it"
+        )
+
+
 @router.get("/", response_model=ExtractedMemoriesPublic)
 def read_extracted_memories(
     session: SessionDep,
@@ -77,27 +92,37 @@ def update_extracted_memory(
     extracted = get_extracted_or_error(session, current_user, memory_id, extracted_id)
     update = extracted_in.model_dump(exclude_unset=True)
     rejected = update.pop("rejected", None)
+    check_editable(extracted, update, rejected)
     if update:
-        extracted.sqlmodel_update(update)
+        # The model call is slow: end the read transaction first so no database
+        # connection is held while Ollama works, then load the item again
+        wording = {
+            field: update.get(field, getattr(extracted, field))
+            for field in ("content", "people", "event_date_text", "location")
+        }
+        session.rollback()
         try:
             # Search must find the corrected wording, not the old one
-            (extracted.embedding,) = llm.embed(
-                [
-                    embedding_text(
-                        extracted.content,
-                        extracted.people,
-                        extracted.event_date_text,
-                        extracted.location,
-                    )
-                ]
-            )
+            (vector,) = llm.embed([embedding_text(**wording)])
         except LLMError as exc:
-            raise HTTPException(status_code=503, detail=str(exc))
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        extracted = get_extracted_or_error(
+            session, current_user, memory_id, extracted_id
+        )
+        check_editable(extracted, update, rejected)
+        restoring = rejected is False and extracted.status == ExtractedStatus.REJECTED
+        extracted.sqlmodel_update(update)
+        extracted.embedding = vector
+        extracted.was_edited = True
         extracted.status = ExtractedStatus.EDITED
+    else:
+        restoring = rejected is False and extracted.status == ExtractedStatus.REJECTED
     if rejected is True:
         extracted.status = ExtractedStatus.REJECTED
-    elif rejected is False and extracted.status == ExtractedStatus.REJECTED:
-        extracted.status = ExtractedStatus.ACTIVE
+    elif restoring:
+        extracted.status = (
+            ExtractedStatus.EDITED if extracted.was_edited else ExtractedStatus.ACTIVE
+        )
     extracted.updated_at = get_datetime_utc()
     session.add(extracted)
     session.commit()

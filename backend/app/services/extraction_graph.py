@@ -34,6 +34,7 @@ class ExtractionState(TypedDict, total=False):
     kind: str
     # Filled in by the nodes
     chunks: list[str]
+    chunk_index: int  # the next chunk `extract` will read
     items: list[dict[str, Any]]  # RawItem as a dict
     drafts: list[dict[str, Any]]  # {"item": RawItem as a dict, "embedding": [...]}
 
@@ -67,14 +68,17 @@ def build_extraction_graph(
     """media/story -> text -> chunks -> items -> filtered items -> embedded drafts.
 
         START -> read_media -> chunk -> extract -> filter -> embed -> END
-              \\-------------^ (skips read_media when the text is already known)
+              \\-------------^           ^   |
+                                        +---+ once per chunk
+        (read_media is skipped when the text is already known)
 
     A file with no readable content ends early with no drafts instead of
     calling the model on an empty string.
 
     With a `checkpointer` the state is saved after every step, so a run that fails
     (Ollama down) or is interrupted (server restart) can continue from its last
-    finished step; see `run_extraction`.
+    finished step; see `run_extraction`. Each chunk is a step of its own, so a
+    failure on chunk 9 of 10 keeps the work done on the first 8.
     """
 
     def read_media(state: ExtractionState) -> ExtractionState:
@@ -87,16 +91,18 @@ def build_extraction_graph(
         }
 
     def chunk(state: ExtractionState) -> ExtractionState:
-        return {"chunks": chunk_text(state["text"])}
+        return {"chunks": chunk_text(state["text"]), "chunk_index": 0, "items": []}
 
     def extract(state: ExtractionState) -> ExtractionState:
+        index = state["chunk_index"]
         system = EXTRACTION_SYSTEM_PROMPT.format(person=state["person_name"])
-        items: list[RawItem] = []
-        for piece in state["chunks"]:
-            items.extend(
-                parse_items(llm.extract_json(system, piece, EXTRACTION_SCHEMA))
-            )
-        return {"items": [item.model_dump() for item in items]}
+        found = parse_items(
+            llm.extract_json(system, state["chunks"][index], EXTRACTION_SCHEMA)
+        )
+        return {
+            "items": [*state["items"], *(item.model_dump() for item in found)],
+            "chunk_index": index + 1,
+        }
 
     def filter_node(state: ExtractionState) -> ExtractionState:
         items = [RawItem.model_validate(item) for item in state["items"]]
@@ -123,6 +129,9 @@ def build_extraction_graph(
     def after_chunk(state: ExtractionState) -> str:
         return "extract" if state["chunks"] else END
 
+    def after_extract(state: ExtractionState) -> str:
+        return "extract" if state["chunk_index"] < len(state["chunks"]) else "filter"
+
     graph = StateGraph(ExtractionState)  # ty: ignore[invalid-argument-type]
     graph.add_node("read_media", read_media)
     graph.add_node("chunk", chunk)
@@ -132,10 +141,24 @@ def build_extraction_graph(
     graph.add_conditional_edges(START, start_route, ["read_media", "chunk"])
     graph.add_edge("read_media", "chunk")
     graph.add_conditional_edges("chunk", after_chunk, ["extract", END])
-    graph.add_edge("extract", "filter")
+    graph.add_conditional_edges("extract", after_extract, ["extract", "filter"])
     graph.add_edge("filter", "embed")
     graph.add_edge("embed", END)
     return graph.compile(checkpointer=checkpointer)
+
+
+# LangGraph stops a run after 25 steps by default, to catch endless loops. Every chunk
+# is a step here, and a long transcript has dozens, so the limit is raised far above
+# any real input (about 1000 chunks, millions of characters).
+RECURSION_LIMIT = 1000
+
+
+def extraction_config(thread_id: str | None = None) -> RunnableConfig:
+    """Run settings for the extraction graph; the thread is the checkpointed run."""
+    config: RunnableConfig = {"recursion_limit": RECURSION_LIMIT}
+    if thread_id is not None:
+        config["configurable"] = {"thread_id": thread_id}
+    return config
 
 
 def run_extraction(
@@ -150,7 +173,7 @@ def run_extraction(
     the last step that finished: a long transcription is not repeated just because
     the model was down for the step after it.
     """
-    config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
+    config = extraction_config(thread_id)
     if graph.get_state(config).next:
         logger.info("Resuming extraction for %s", thread_id)
         return cast(ExtractionState, graph.invoke(None, config))

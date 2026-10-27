@@ -1,9 +1,10 @@
 import uuid
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Self
 
 from pgvector.sqlalchemy import Vector
-from pydantic import EmailStr
+from pydantic import EmailStr, model_validator
 from sqlalchemy import JSON, BigInteger, Column, Index, Text
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -275,6 +276,11 @@ class ExtractedMemory(SQLModel, table=True):
     location: str | None = Field(default=None, max_length=255)
     confidence: float
     status: str = Field(default=ExtractedStatus.ACTIVE, max_length=20)
+    # Stays true once the user edits the item, also while it is rejected, so a
+    # restore goes back to EDITED and a re-extraction never replaces their wording
+    was_edited: bool = Field(
+        default=False, sa_column_kwargs={"server_default": "false"}
+    )
     source: str = Field(max_length=20)
     embedding: list[float] = Field(
         sa_column=Column(Vector(EMBEDDING_DIMENSIONS), nullable=False)
@@ -304,7 +310,9 @@ class ExtractedMemoriesPublic(SQLModel):
     count: int
 
 
-# Editing any field marks the item as edited; `rejected` removes it from search
+# Editing any field marks the item as edited; `rejected` removes it from search.
+# Omit a field to leave it alone. `event_date_text` and `location` may be sent as
+# null to clear them; the other three are required on the item, so null is refused.
 class ExtractedMemoryUpdate(SQLModel):
     category: ExtractedCategory | None = None
     content: str | None = Field(default=None, min_length=1, max_length=2000)
@@ -313,11 +321,20 @@ class ExtractedMemoryUpdate(SQLModel):
     location: str | None = Field(default=None, max_length=255)
     rejected: bool | None = None
 
+    @model_validator(mode="after")
+    def refuse_null_required_fields(self) -> Self:
+        for name in ("category", "content", "people"):
+            if name in self.model_fields_set and getattr(self, name) is None:
+                raise ValueError(f"{name} cannot be null")
+        return self
+
 
 class SearchRequest(SQLModel):
     query: str = Field(min_length=1, max_length=500)
     memory_id: uuid.UUID | None = None
     limit: int | None = Field(default=None, ge=1, le=20)
+    # Superusers only: search everyone's memories instead of their own
+    all_users: bool = False
 
 
 class SearchHit(SQLModel):
@@ -335,6 +352,8 @@ class SearchResults(SQLModel):
 class AskRequest(SQLModel):
     question: str = Field(min_length=1, max_length=500)
     memory_id: uuid.UUID | None = None
+    # Superusers only: answer from everyone's memories instead of their own
+    all_users: bool = False
 
 
 class AskResponse(SQLModel):

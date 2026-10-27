@@ -8,6 +8,7 @@ from app.services.retrieval import search_extracted
 from tests.utils.extracted_memory import create_random_extracted_memory
 from tests.utils.llm import FakeLLMClient
 from tests.utils.memory import create_random_memory
+from tests.utils.user import get_superuser
 
 
 def owner_of(db: Session, memory: Memory) -> User:
@@ -44,16 +45,49 @@ def test_search_never_returns_another_users_memories(
     assert [h.item.content for h in hits] == ["my secret recipe"]
 
 
-def test_search_lets_a_superuser_see_everything(
+def test_search_keeps_a_superuser_to_their_own_memories_by_default(
     db: Session, llm_client: FakeLLMClient
 ) -> None:
     memory = create_random_memory(db)
     create_random_extracted_memory(db, memory, content="zebra stripes tale")
-    admin = User(email="x@example.com", hashed_password="x", is_superuser=True)
+    admin = get_superuser(db)
 
-    hits = search_extracted(db, admin, llm_client, "zebra stripes tale", limit=1)
+    default = search_extracted(db, admin, llm_client, "zebra stripes tale")
+    everyone = search_extracted(
+        db, admin, llm_client, "zebra stripes tale", all_users=True
+    )
 
-    assert hits[0].item.content == "zebra stripes tale"
+    assert all(h.item.memory_id != memory.id for h in default)
+    assert everyone[0].item.content == "zebra stripes tale"
+
+
+def test_search_ignores_all_users_for_a_normal_user(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    mine = create_random_memory(db)
+    theirs = create_random_memory(db)
+    create_random_extracted_memory(db, mine, content="giraffe neck tale")
+    create_random_extracted_memory(db, theirs, content="giraffe neck tale again")
+
+    hits = search_extracted(
+        db, owner_of(db, mine), llm_client, "giraffe neck tale", all_users=True
+    )
+
+    assert [h.item.content for h in hits] == ["giraffe neck tale"]
+
+
+def test_ask_by_a_superuser_only_uses_their_own_memories_unless_asked(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    theirs = create_random_memory(db)
+    create_random_extracted_memory(db, theirs, content="Cousin Ana raised llamas")
+    admin = get_superuser(db)
+
+    default = ask(db, admin, llm_client, "Cousin Ana raised llamas")
+    everyone = ask(db, admin, llm_client, "Cousin Ana raised llamas", all_users=True)
+
+    assert default.sources == []
+    assert [s.item.content for s in everyone.sources] == ["Cousin Ana raised llamas"]
 
 
 def test_search_skips_rejected_items_and_can_focus_on_one_memory(

@@ -20,6 +20,7 @@ NO_ANSWER = (
 class AskState(TypedDict, total=False):
     question: str
     memory_id: uuid.UUID | None
+    all_users: bool
     hits: list[SearchHit]
     relevant: list[SearchHit]
     answer: str
@@ -56,7 +57,12 @@ def build_ask_graph(session: Session, user: User, llm: LLMClient) -> AskGraph:
 
     def retrieve(state: AskState) -> AskState:
         hits = search_extracted(
-            session, user, llm, state["question"], memory_id=state.get("memory_id")
+            session,
+            user,
+            llm,
+            state["question"],
+            memory_id=state.get("memory_id"),
+            all_users=state.get("all_users", False),
         )
         return {"hits": hits}
 
@@ -101,8 +107,9 @@ def ask(
     llm: LLMClient,
     question: str,
     memory_id: uuid.UUID | None = None,
+    all_users: bool = False,
 ) -> AskResponse:
     result = build_ask_graph(session, user, llm).invoke(
-        {"question": question, "memory_id": memory_id}
+        {"question": question, "memory_id": memory_id, "all_users": all_users}
     )
     return AskResponse(answer=result["answer"], sources=result["relevant"])

@@ -1,12 +1,15 @@
 import logging
 import uuid
 from pathlib import Path
+from typing import Any
 
 import pytest
+from langgraph.errors import GraphRecursionError
 from sqlmodel import Session, col, select
 
 from app.core.checkpoint import clear_thread, open_checkpointer
 from app.core.config import settings
+from app.core.llm import LLMError
 from app.models import ExtractedMemory, ExtractedSource, ExtractedStatus
 from app.services.extraction import (
     CHUNK_CHARS,
@@ -20,8 +23,10 @@ from app.services.extraction import (
     replace_extracted,
 )
 from app.services.extraction_graph import (
+    ExtractionState,
     build_extraction_graph,
     drafts_from_state,
+    extraction_config,
     run_extraction,
 )
 from tests.utils.llm import FakeLLMClient
@@ -232,3 +237,69 @@ def test_parse_items_logs_what_was_wrong_but_never_the_content(
 
     assert "category" in caplog.text
     assert secret not in caplog.text
+
+
+def long_text(chunks: int) -> str:
+    """Text that splits into exactly `chunks` chunks of one sentence each."""
+    sentences = [
+        f"{index:03d} " + "x" * (CHUNK_CHARS - 10) + "." for index in range(chunks)
+    ]
+    return " ".join(sentences)
+
+
+def test_graph_reads_a_long_text_one_chunk_per_step(
+    llm_client: FakeLLMClient,
+) -> None:
+    text = long_text(40)
+    assert len(chunk_text(text)) == 40
+    graph = build_extraction_graph(llm_client)
+
+    # 40 chunks are more steps than the limit of 25 that older LangGraph versions
+    # apply by default (the installed one allows far more, so it is set explicitly)
+    with pytest.raises(GraphRecursionError):
+        graph.invoke({"person_name": "Nan", "text": text}, {"recursion_limit": 25})
+    llm_client.extract_prompts.clear()
+
+    result = graph.invoke({"person_name": "Nan", "text": text}, extraction_config())
+
+    assert len(llm_client.extract_prompts) == 40
+    assert len(result["drafts"]) == 40
+
+
+class FailingOnChunk(FakeLLMClient):
+    """Raises once on the given (1-based) model call, then behaves."""
+
+    def __init__(self, fail_on_call: int) -> None:
+        super().__init__()
+        self.fail_on_call = fail_on_call
+        self.calls = 0
+
+    def extract_json(
+        self, system: str, prompt: str, schema: dict[str, Any]
+    ) -> dict[str, Any]:
+        self.calls += 1
+        if self.calls == self.fail_on_call:
+            raise LLMError("Could not reach Ollama")
+        return super().extract_json(system, prompt, schema)
+
+
+def test_a_failure_on_a_middle_chunk_keeps_the_chunks_before_it() -> None:
+    llm = FailingOnChunk(fail_on_call=5)
+    text = long_text(10)
+    thread_id = f"test-{uuid.uuid4()}"
+    initial: ExtractionState = {"person_name": "Nan", "text": text}
+    try:
+        with open_checkpointer() as saver:
+            graph = build_extraction_graph(llm, checkpointer=saver)
+            with pytest.raises(LLMError):
+                run_extraction(graph, saver, initial, thread_id)
+            assert len(llm.extract_prompts) == 4
+
+            result = run_extraction(graph, saver, initial, thread_id)
+    finally:
+        clear_thread(thread_id)
+
+    # The 4 finished chunks were not sent to the model again
+    assert len(llm.extract_prompts) == 10
+    assert len(set(llm.extract_prompts)) == 10
+    assert len(result["drafts"]) == 10

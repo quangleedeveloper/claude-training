@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from urllib.parse import quote
 
@@ -59,14 +59,26 @@ def setup_checkpoint_tables() -> None:
             lock_connection.execute("SELECT pg_advisory_unlock(%s)", (SETUP_LOCK_KEY,))
 
 
-def clear_thread(thread_id: str) -> None:
-    """Forget the saved progress of one run.
+def clear_threads(thread_ids: Sequence[str]) -> None:
+    """Forget the saved progress of several runs over one database connection.
 
     Best effort: a leftover checkpoint only wastes space, so a failure here is
-    logged rather than allowed to undo work that already succeeded.
+    logged rather than allowed to undo work that already succeeded. A thread that
+    fails does not stop the others from being cleared.
     """
+    if not thread_ids:
+        return
     try:
         with open_checkpointer() as saver:
-            saver.delete_thread(thread_id)
+            for thread_id in thread_ids:
+                try:
+                    saver.delete_thread(thread_id)
+                except Exception:
+                    logger.exception("Could not clear checkpoints for %s", thread_id)
     except Exception:
-        logger.exception("Could not clear checkpoints for %s", thread_id)
+        logger.exception("Could not clear checkpoints for %d runs", len(thread_ids))
+
+
+def clear_thread(thread_id: str) -> None:
+    """Forget the saved progress of one run (see `clear_threads`)."""
+    clear_threads([thread_id])

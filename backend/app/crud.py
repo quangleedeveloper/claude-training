@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlmodel import Session, col, select
 
-from app.core.checkpoint import clear_thread
+from app.core.checkpoint import clear_threads
 from app.core.security import get_password_hash, verify_password
 from app.core.storage import FileStorage
 from app.models import (
@@ -130,6 +130,8 @@ def remove_memory_files(
     statement = select(MemoryFile.id, MemoryFile.storage_key).where(
         col(MemoryFile.memory_id).in_(memory_ids)
     )
+    thread_ids: list[str] = []
     for file_id, storage_key in session.exec(statement).all():
         storage.delete(storage_key)
-        clear_thread(str(file_id))
+        thread_ids.append(str(file_id))
+    clear_threads(thread_ids)

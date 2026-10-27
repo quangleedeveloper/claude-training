@@ -19,6 +19,12 @@ def user_authentication_headers(
     return headers
 
 
+def get_superuser(db: Session) -> User:
+    user = crud.get_user_by_email(session=db, email=settings.FIRST_SUPERUSER)
+    assert user is not None
+    return user
+
+
 def create_random_user(db: Session) -> User:
     email = random_email()
     password = random_lower_string()
