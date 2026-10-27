@@ -129,10 +129,26 @@ class MemoryUpdate(SQLModel):
     content: str | None = Field(default=None, min_length=1, max_length=5000)
 
 
+class MemoryExtractionStatus(StrEnum):
+    IDLE = "idle"
+    PROCESSING = "processing"
+    DONE = "done"
+    FAILED = "failed"
+
+
 # Database model, database table inferred from class name
 class Memory(MemoryBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(default_factory=get_datetime_utc)
+    # State of reading the written story. Plain VARCHAR like the other statuses;
+    # the server default keeps memories that existed before this column as "done"
+    extraction_status: str = Field(
+        default=MemoryExtractionStatus.DONE,
+        max_length=20,
+        sa_column_kwargs={"server_default": MemoryExtractionStatus.DONE.value},
+    )
+    # A message written for users (see UserFacingError), never a raw exception
+    extraction_error: str | None = Field(default=None, max_length=500)
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
@@ -145,6 +161,8 @@ class MemoryPublic(MemoryBase):
     id: uuid.UUID
     owner_id: uuid.UUID
     created_at: datetime | None = None
+    extraction_status: MemoryExtractionStatus
+    extraction_error: str | None = None
 
 
 class MemoriesPublic(SQLModel):

@@ -160,6 +160,11 @@ check_rules() {
     deny "Never commit .env: it holds secrets (see .claude/rules/workflow.md)."
   fi
 
+  # memorial-privacy: backend/uploads/ holds real family media, off-limits to agents
+  if printf '%s' "$COMMAND" | grep -qiE '(^|[^[:alnum:]_.-])backend[/\\]+uploads([^[:alnum:]_.-]|$)'; then
+    deny "backend/uploads/ holds real family media and is off-limits to agents: use synthetic data from fixtures/."
+  fi
+
   # Don't commit directly to main. Only judge the current branch when the command
   # runs `git commit` itself and does not first change branch or directory.
   if printf '%s' "$COMMAND" | grep -qE "${BOUNDARY}git[[:space:]]+commit"; then
