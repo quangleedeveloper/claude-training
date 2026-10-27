@@ -51,6 +51,8 @@ These come from the product's existing rules (`CLAUDE.md`, the `grounding-policy
 - Anything else is undecided until the open questions are answered.
 
 ## Open questions
+Sent to the client in `tickets/MR-100.md` on 2026-10-27. Answers land here in the same commit.
+
 | # | Question | Why it matters | Answer | Status |
 |---|----------|----------------|--------|--------|
 | Q1 | Should the persona match her **written style** only, or also **sound like her** (her voice)? | Voice cloning is a separate system with its own consent and misuse risks | | pending |
