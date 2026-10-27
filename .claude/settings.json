@@ -19,6 +19,15 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-bash.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Read|Write|Edit|MultiEdit|NotebookEdit|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/protect-paths.sh\""
+          }
+        ]
       }
     ],
     "PostToolUse": [

@@ -8,3 +8,5 @@ backend/uploads/
 /blob-report/
 /playwright/.cache/
 .env
+# Local test lock for bug fixes (see .claude/hooks/protect-paths.sh)
+.claude/tests-locked
