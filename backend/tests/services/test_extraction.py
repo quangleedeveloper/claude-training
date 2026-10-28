@@ -10,7 +10,12 @@ from sqlmodel import Session, col, select
 from app.core.checkpoint import clear_thread, open_checkpointer
 from app.core.config import settings
 from app.core.llm import LLMError
-from app.models import ExtractedMemory, ExtractedSource, ExtractedStatus
+from app.models import (
+    ExtractedMemory,
+    ExtractedSource,
+    ExtractedStatus,
+    get_datetime_utc,
+)
 from app.services.extraction import (
     CHUNK_CHARS,
     ExtractedDraft,
@@ -303,3 +308,38 @@ def test_a_failure_on_a_middle_chunk_keeps_the_chunks_before_it() -> None:
     assert len(llm.extract_prompts) == 10
     assert len(set(llm.extract_prompts)) == 10
     assert len(result["drafts"]) == 10
+
+
+def test_reextraction_keeps_confirmed_items(db: Session) -> None:
+    memory = create_random_memory(db)
+    replace_extracted(
+        db,
+        memory_id=memory.id,
+        file_id=None,
+        source=ExtractedSource.STORY,
+        drafts=[_draft("Confirmed, never edited."), _draft("Unchecked AI item.")],
+    )
+    db.commit()
+    for row in db.exec(
+        select(ExtractedMemory).where(col(ExtractedMemory.memory_id) == memory.id)
+    ).all():
+        if row.content == "Confirmed, never edited.":
+            row.confirmed_at = get_datetime_utc()
+            db.add(row)
+    db.commit()
+
+    added = replace_extracted(
+        db,
+        memory_id=memory.id,
+        file_id=None,
+        source=ExtractedSource.STORY,
+        drafts=[_draft("Confirmed, never edited."), _draft("Brand new.")],
+    )
+    db.commit()
+
+    # The confirmed item stays (and is not added twice); the unchecked one is replaced
+    assert added == 1
+    assert _stored(db, memory.id) == {
+        "Confirmed, never edited.": ExtractedStatus.ACTIVE,
+        "Brand new.": ExtractedStatus.ACTIVE,
+    }

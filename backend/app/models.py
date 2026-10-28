@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import Self
 
 from pgvector.sqlalchemy import Vector
-from pydantic import EmailStr, field_validator, model_validator
+from pydantic import EmailStr, computed_field, field_validator, model_validator
 from sqlalchemy import JSON, BigInteger, Column, Index, Text
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -393,6 +393,9 @@ class ExtractedMemory(SQLModel, table=True):
     was_edited: bool = Field(
         default=False, sa_column_kwargs={"server_default": "false"}
     )
+    # Set when a family member confirms the item or corrects it; the persona only
+    # reads confirmed items. Cleared by undoing the confirmation.
+    confirmed_at: datetime | None = None
     source: str = Field(max_length=20)
     embedding: list[float] = Field(
         sa_column=Column(Vector(EMBEDDING_DIMENSIONS), nullable=False)
@@ -413,13 +416,24 @@ class ExtractedMemoryPublic(SQLModel):
     confidence: float
     status: ExtractedStatus
     source: ExtractedSource
+    confirmed_at: datetime | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def confirmed(self) -> bool:
+        return self.confirmed_at is not None
 
 
 class ExtractedMemoriesPublic(SQLModel):
     data: list[ExtractedMemoryPublic]
     count: int
+
+
+# How many items "confirm all" newly confirmed on a memory
+class ConfirmAllResult(SQLModel):
+    confirmed: int
 
 
 # Editing any field marks the item as edited; `rejected` removes it from search.

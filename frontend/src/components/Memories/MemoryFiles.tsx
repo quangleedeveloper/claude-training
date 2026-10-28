@@ -281,8 +281,9 @@ const MemoryFiles = ({ memory, isOpen, onOpenChange }: MemoryFilesProps) => {
         <div className="grid gap-2">
           <h3 className="text-sm font-semibold">What the AI found</h3>
           <p className="text-xs text-muted-foreground">
-            Review these. Edit anything that is wrong, or reject it to keep it
-            out of search and answers.
+            Review these. Confirm what is right, edit anything that is wrong
+            (editing confirms it), or reject it to keep it out of search and
+            answers. Only confirmed items are used for a person's conversation.
           </p>
           <ExtractedMemories memoryId={memory.id} files={files?.data ?? []} />
         </div>

@@ -147,8 +147,8 @@ def replace_extracted(
 ) -> int:
     """Swap the untouched items of one source (a file, or the story) for new ones.
 
-    Items the user edited or rejected stay, and a re-extraction never brings a
-    rejected fact back. The caller commits.
+    Items the user edited, confirmed or rejected stay, and a re-extraction never
+    brings a rejected fact back. The caller commits.
     """
     same_source = (
         col(ExtractedMemory.file_id).is_(None)
@@ -160,6 +160,7 @@ def replace_extracted(
             col(ExtractedMemory.memory_id) == memory_id,
             same_source,
             col(ExtractedMemory.status) == ExtractedStatus.ACTIVE,
+            col(ExtractedMemory.confirmed_at).is_(None),
         )
     )
     kept = session.exec(

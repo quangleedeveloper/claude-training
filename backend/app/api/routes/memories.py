@@ -8,6 +8,9 @@ from app import crud
 from app.api.deps import CurrentUser, LLMClientDep, SessionDep, StorageDep
 from app.api.routes.persons import get_person_or_error
 from app.models import (
+    ConfirmAllResult,
+    ExtractedMemory,
+    ExtractedStatus,
     MemoriesPublic,
     Memory,
     MemoryCreate,
@@ -15,6 +18,7 @@ from app.models import (
     MemoryPublic,
     MemoryUpdate,
     Message,
+    get_datetime_utc,
 )
 from app.services.processing import extract_memory_story
 
@@ -119,6 +123,36 @@ def update_memory(
     if "content" in update_dict or "person_name" in update_dict:
         background_tasks.add_task(extract_memory_story, memory.id, llm)
     return memory
+
+
+@router.post("/{id}/confirm-all", response_model=ConfirmAllResult)
+def confirm_all_extracted(
+    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+) -> Any:
+    """
+    Confirm every unconfirmed, non-rejected item extracted from a memory.
+    """
+    memory = session.get(Memory, id)
+    if not memory:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    # Strictly the owner's: confirming decides what the persona may say, so
+    # superusers get no exception here
+    if memory.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    pending = session.exec(
+        select(ExtractedMemory).where(
+            col(ExtractedMemory.memory_id) == memory.id,
+            col(ExtractedMemory.status) != ExtractedStatus.REJECTED,
+            col(ExtractedMemory.confirmed_at).is_(None),
+        )
+    ).all()
+    now = get_datetime_utc()
+    for extracted in pending:
+        extracted.confirmed_at = now
+        extracted.updated_at = now
+        session.add(extracted)
+    session.commit()
+    return ConfirmAllResult(confirmed=len(pending))
 
 
 @router.put("/{id}/person", response_model=MemoryPublic)
