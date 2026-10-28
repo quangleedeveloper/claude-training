@@ -23,7 +23,7 @@ until then this folder holds the cases.
 - `from`: the AC or incident the case protects. Every production incident adds one.
 - `fallback: true` means the answer must be the fixed "no memory" reply and cite nothing.
 - Fixtures are synthetic families only (see `fixtures/README.md`).
-### Optional fields for persona cases (proposed by QA, MR-109 QA-1)
+### Optional fields for persona cases (confirmed by the BA, MR-109 QA-1)
 - `person`, `as`: the fixture person the conversation is with, and the fixture user asking (`owner` or `member`).
 - `turns_before`: user messages sent earlier in the same open conversation.
 - `summary`: a past-conversation summary loaded before the conversation opens.
