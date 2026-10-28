@@ -3,6 +3,7 @@ import {
   Briefcase,
   Home,
   MessageCircleQuestion,
+  UserRound,
   Users,
 } from "lucide-react"
 
@@ -22,6 +23,7 @@ const baseItems: Item[] = [
   { icon: Home, title: "Dashboard", path: "/" },
   { icon: Briefcase, title: "Items", path: "/items" },
   { icon: BookHeart, title: "Memories", path: "/memories" },
+  { icon: UserRound, title: "People", path: "/persons" },
   { icon: MessageCircleQuestion, title: "Ask", path: "/ask" },
 ]
 

@@ -292,6 +292,11 @@ export type MemoryCreate = {
 };
 
 /**
+ * MemoryExtractionStatus
+ */
+export type MemoryExtractionStatus = 'idle' | 'processing' | 'done' | 'failed';
+
+/**
  * MemoryFileKind
  */
 export type MemoryFileKind = 'image' | 'audio' | 'video';
@@ -374,6 +379,16 @@ export type MemoryFilesUploadResult = {
 };
 
 /**
+ * MemoryPersonLink
+ */
+export type MemoryPersonLink = {
+    /**
+     * Person Id
+     */
+    person_id?: string | null;
+};
+
+/**
  * MemoryPublic
  */
 export type MemoryPublic = {
@@ -401,6 +416,15 @@ export type MemoryPublic = {
      * Created At
      */
     created_at?: string | null;
+    /**
+     * Person Id
+     */
+    person_id?: string | null;
+    extraction_status: MemoryExtractionStatus;
+    /**
+     * Extraction Error
+     */
+    extraction_error?: string | null;
 };
 
 /**
@@ -443,6 +467,74 @@ export type NewPassword = {
      * New Password
      */
     new_password: string;
+};
+
+/**
+ * PersonCreate
+ */
+export type PersonCreate = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Other Names
+     */
+    other_names?: Array<string>;
+};
+
+/**
+ * PersonPublic
+ */
+export type PersonPublic = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Other Names
+     */
+    other_names?: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Owner Id
+     */
+    owner_id: string;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+};
+
+/**
+ * PersonUpdate
+ */
+export type PersonUpdate = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Other Names
+     */
+    other_names?: Array<string> | null;
+};
+
+/**
+ * PersonsPublic
+ */
+export type PersonsPublic = {
+    /**
+     * Data
+     */
+    data: Array<PersonPublic>;
+    /**
+     * Count
+     */
+    count: number;
 };
 
 /**
@@ -1444,6 +1536,36 @@ export type memoriesUpdateMemoryResponses = {
 
 export type memoriesUpdateMemoryResponse = memoriesUpdateMemoryResponses[keyof memoriesUpdateMemoryResponses];
 
+export type memoriesLinkMemoryPersonData = {
+    body: MemoryPersonLink;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}/person';
+};
+
+export type memoriesLinkMemoryPersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesLinkMemoryPersonError = memoriesLinkMemoryPersonErrors[keyof memoriesLinkMemoryPersonErrors];
+
+export type memoriesLinkMemoryPersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type memoriesLinkMemoryPersonResponse = memoriesLinkMemoryPersonResponses[keyof memoriesLinkMemoryPersonResponses];
+
 export type memoryFilesReadMemoryFilesData = {
     body?: never;
     path: {
@@ -1605,6 +1727,155 @@ export type memoryFilesDeleteMemoryFileResponses = {
 };
 
 export type memoryFilesDeleteMemoryFileResponse = memoryFilesDeleteMemoryFileResponses[keyof memoryFilesDeleteMemoryFileResponses];
+
+export type personsReadPersonsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/persons/';
+};
+
+export type personsReadPersonsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsReadPersonsError = personsReadPersonsErrors[keyof personsReadPersonsErrors];
+
+export type personsReadPersonsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonsPublic;
+};
+
+export type personsReadPersonsResponse = personsReadPersonsResponses[keyof personsReadPersonsResponses];
+
+export type personsCreatePersonData = {
+    body: PersonCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/persons/';
+};
+
+export type personsCreatePersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsCreatePersonError = personsCreatePersonErrors[keyof personsCreatePersonErrors];
+
+export type personsCreatePersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonPublic;
+};
+
+export type personsCreatePersonResponse = personsCreatePersonResponses[keyof personsCreatePersonResponses];
+
+export type personsDeletePersonData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}';
+};
+
+export type personsDeletePersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsDeletePersonError = personsDeletePersonErrors[keyof personsDeletePersonErrors];
+
+export type personsDeletePersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsDeletePersonResponse = personsDeletePersonResponses[keyof personsDeletePersonResponses];
+
+export type personsReadPersonData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}';
+};
+
+export type personsReadPersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsReadPersonError = personsReadPersonErrors[keyof personsReadPersonErrors];
+
+export type personsReadPersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonPublic;
+};
+
+export type personsReadPersonResponse = personsReadPersonResponses[keyof personsReadPersonResponses];
+
+export type personsUpdatePersonData = {
+    body: PersonUpdate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}';
+};
+
+export type personsUpdatePersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsUpdatePersonError = personsUpdatePersonErrors[keyof personsUpdatePersonErrors];
+
+export type personsUpdatePersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonPublic;
+};
+
+export type personsUpdatePersonResponse = personsUpdatePersonResponses[keyof personsUpdatePersonResponses];
 
 export type extractedMemoriesReadExtractedMemoriesData = {
     body?: never;
