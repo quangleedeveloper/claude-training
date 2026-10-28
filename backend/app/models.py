@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import Self
 
 from pgvector.sqlalchemy import Vector
-from pydantic import EmailStr, model_validator
+from pydantic import EmailStr, field_validator, model_validator
 from sqlalchemy import JSON, BigInteger, Column, Index, Text
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -58,6 +58,7 @@ class User(UserBase, table=True):
     created_at: datetime | None = Field(default_factory=get_datetime_utc)
     items: list[Item] = Relationship(back_populates="owner", cascade_delete=True)
     memories: list[Memory] = Relationship(back_populates="owner", cascade_delete=True)
+    persons: list[Person] = Relationship(back_populates="owner", cascade_delete=True)
 
 
 # Properties to return via API, id is always required
@@ -110,6 +111,88 @@ class ItemsPublic(SQLModel):
     count: int
 
 
+MAX_OTHER_NAMES = 10
+
+
+def clean_other_names(names: list[str] | None) -> list[str] | None:
+    """Trim each name and drop case-insensitive duplicates, keeping the first."""
+    if names is None:
+        return None
+    if len(names) > MAX_OTHER_NAMES:
+        raise ValueError(f"at most {MAX_OTHER_NAMES} other names")
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for name in names:
+        name = name.strip()
+        if not 1 <= len(name) <= 255:
+            raise ValueError("each other name must be 1 to 255 characters")
+        if name.casefold() not in seen:
+            seen.add(name.casefold())
+            cleaned.append(name)
+    return cleaned
+
+
+# Shared properties
+class PersonBase(SQLModel):
+    name: str = Field(min_length=1, max_length=255)
+    # What the family calls them besides `name` ("Mom", "Mẹ")
+    other_names: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+
+    @field_validator("other_names")
+    @classmethod
+    def clean_names(cls, value: list[str]) -> list[str]:
+        return clean_other_names(value) or []
+
+
+# Properties to receive on person creation
+class PersonCreate(PersonBase):
+    pass
+
+
+# Properties to receive on person update
+class PersonUpdate(SQLModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    other_names: list[str] | None = None
+
+    @field_validator("other_names")
+    @classmethod
+    def clean_names(cls, value: list[str] | None) -> list[str] | None:
+        return clean_other_names(value)
+
+    @model_validator(mode="after")
+    def refuse_null_fields(self) -> Self:
+        for name in ("name", "other_names"):
+            if name in self.model_fields_set and getattr(self, name) is None:
+                raise ValueError(f"{name} cannot be null")
+        return self
+
+
+# Someone the family remembers. The owner links their memories to it; later
+# tickets hang the persona, its conversations and its members off `person.id`.
+# `memory.person_id` is SET NULL, so deleting a person never deletes memories.
+class Person(PersonBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime | None = Field(default_factory=get_datetime_utc)
+    owner_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    owner: User | None = Relationship(back_populates="persons")
+
+
+# Properties to return via API, id is always required
+class PersonPublic(PersonBase):
+    id: uuid.UUID
+    owner_id: uuid.UUID
+    created_at: datetime | None = None
+
+
+class PersonsPublic(SQLModel):
+    data: list[PersonPublic]
+    count: int
+
+
 # Shared properties
 class MemoryBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
@@ -152,6 +235,11 @@ class Memory(MemoryBase, table=True):
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
+    # Not a Relationship on purpose: one declared with cascade_delete would delete
+    # the memories along with the person
+    person_id: uuid.UUID | None = Field(
+        default=None, foreign_key="person.id", ondelete="SET NULL", index=True
+    )
     owner: User | None = Relationship(back_populates="memories")
     files: list[MemoryFile] = Relationship(back_populates="memory", cascade_delete=True)
 
@@ -161,8 +249,14 @@ class MemoryPublic(MemoryBase):
     id: uuid.UUID
     owner_id: uuid.UUID
     created_at: datetime | None = None
+    person_id: uuid.UUID | None = None
     extraction_status: MemoryExtractionStatus
     extraction_error: str | None = None
+
+
+# `person_id: null` unlinks the memory
+class MemoryPersonLink(SQLModel):
+    person_id: uuid.UUID | None = None
 
 
 class MemoriesPublic(SQLModel):

@@ -14,6 +14,8 @@ from app.models import (
     MemoryCreate,
     MemoryFile,
     MemoryFileKind,
+    Person,
+    PersonCreate,
     User,
     UserCreate,
     UserUpdate,
@@ -89,6 +91,16 @@ def create_memory(
     session.commit()
     session.refresh(db_memory)
     return db_memory
+
+
+def create_person(
+    *, session: Session, person_in: PersonCreate, owner_id: uuid.UUID
+) -> Person:
+    db_person = Person.model_validate(person_in, update={"owner_id": owner_id})
+    session.add(db_person)
+    session.commit()
+    session.refresh(db_person)
+    return db_person
 
 
 def create_memory_file(

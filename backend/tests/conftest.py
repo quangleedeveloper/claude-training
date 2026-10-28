@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.core.db import engine, init_db
 from app.core.llm import get_llm_client
 from app.main import app
-from app.models import ExtractedMemory, Item, Memory, MemoryFile, User
+from app.models import ExtractedMemory, Item, Memory, MemoryFile, Person, User
 from app.services.processing import get_media_processor
 from tests.utils.llm import FakeLLMClient
 from tests.utils.memory_file import FakeMediaProcessor
@@ -59,6 +59,8 @@ def db() -> Generator[Session]:
         statement = delete(MemoryFile)
         session.execute(statement)
         statement = delete(Memory)
+        session.execute(statement)
+        statement = delete(Person)
         session.execute(statement)
         statement = delete(Item)
         session.execute(statement)

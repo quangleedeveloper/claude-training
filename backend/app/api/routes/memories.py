@@ -6,10 +6,12 @@ from sqlmodel import col, func, select
 
 from app import crud
 from app.api.deps import CurrentUser, LLMClientDep, SessionDep, StorageDep
+from app.api.routes.persons import get_person_or_error
 from app.models import (
     MemoriesPublic,
     Memory,
     MemoryCreate,
+    MemoryPersonLink,
     MemoryPublic,
     MemoryUpdate,
     Message,
@@ -116,6 +118,33 @@ def update_memory(
     # The story or the person it is about changed, so what was extracted is stale
     if "content" in update_dict or "person_name" in update_dict:
         background_tasks.add_task(extract_memory_story, memory.id, llm)
+    return memory
+
+
+@router.put("/{id}/person", response_model=MemoryPublic)
+def link_memory_person(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+    link_in: MemoryPersonLink,
+) -> Any:
+    """
+    Link a memory to one of the caller's persons, or unlink it with null.
+    """
+    memory = session.get(Memory, id)
+    if not memory:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    # Strictly the owner's: linking exposes the memory to the persona, so superusers
+    # get no exception here
+    if memory.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    if link_in.person_id is not None:
+        get_person_or_error(session, current_user, link_in.person_id)
+    memory.person_id = link_in.person_id
+    session.add(memory)
+    session.commit()
+    session.refresh(memory)
     return memory
 
 

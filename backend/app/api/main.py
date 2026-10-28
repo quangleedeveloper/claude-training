@@ -6,6 +6,7 @@ from app.api.routes import (
     login,
     memories,
     memory_files,
+    persons,
     private,
     search,
     users,
@@ -20,6 +21,7 @@ api_router.include_router(utils.router)
 api_router.include_router(items.router)
 api_router.include_router(memories.router)
 api_router.include_router(memory_files.router)
+api_router.include_router(persons.router)
 api_router.include_router(extracted_memories.router)
 api_router.include_router(search.router)
 
