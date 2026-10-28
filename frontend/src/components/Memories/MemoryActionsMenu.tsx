@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import DeleteMemory from "./DeleteMemory"
 import EditMemory from "./EditMemory"
+import LinkPerson from "./LinkPerson"
 import MemoryFiles from "./MemoryFiles"
 
 interface MemoryActionsMenuProps {
@@ -32,6 +33,7 @@ export const MemoryActionsMenu = ({ memory }: MemoryActionsMenuProps) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <EditMemory memory={memory} onSuccess={() => setOpen(false)} />
+          <LinkPerson memory={memory} onSuccess={() => setOpen(false)} />
           <DropdownMenuItem onSelect={() => setFilesOpen(true)}>
             <Paperclip />
             Manage Files
