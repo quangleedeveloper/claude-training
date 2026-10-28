@@ -1,6 +1,6 @@
 # Persona conversation: "make it feel like talking to Mom"
 
-author: BA (with Claude) for Lead (as client) · status: ready for Lead review
+author: BA (with Claude) for Lead (as client) · status: accepted (PR #20, answers PR #23) · spec: `specs/persona-conversation/spec.md`
 brief: tickets/MR-100.md
 
 ## Problem
