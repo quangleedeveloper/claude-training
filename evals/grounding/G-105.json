@@ -1,0 +1,17 @@
+{
+  "id": "G-105",
+  "from": "AC-3.3",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "question": "Were you a fisherman in Whitby?",
+  "expect": {
+    "not_cites": [
+      "I-11"
+    ],
+    "must_include": [],
+    "must_not_include": [
+      "I was a fisherman"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "G-116",
+  "from": "AC-4.3",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "turns_before": [
+    "Tell me about your garden."
+  ],
+  "question": "What did you grow there?",
+  "expect": {
+    "fallback": false,
+    "cites": [
+      "I-03"
+    ],
+    "must_include": [
+      "basil"
+    ],
+    "must_not_include": []
+  }
+}
