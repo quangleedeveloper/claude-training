@@ -509,6 +509,26 @@ def test_edit_confirms_item(
     assert again.json()["confirmed_at"] == first
 
 
+def test_superuser_edit_does_not_confirm_item(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    # A superuser may edit anyone's items, but only the owner's edit confirms:
+    # otherwise they could widen what the persona is allowed to say
+    extracted = create_random_extracted_memory(db)
+
+    response = client.patch(
+        url(extracted.memory_id, extracted.id),
+        headers=superuser_token_headers,
+        json={"content": "Edited by a superuser."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["content"] == "Edited by a superuser."
+    assert response.json()["confirmed"] is False
+    db.refresh(extracted)
+    assert extracted.confirmed_at is None
+
+
 def test_reject_does_not_confirm_item(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:

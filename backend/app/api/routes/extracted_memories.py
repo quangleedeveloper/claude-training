@@ -128,8 +128,15 @@ def update_extracted_memory(
         extracted.embedding = vector
         extracted.was_edited = True
         extracted.status = ExtractedStatus.EDITED
-        # Correcting an item counts as confirming it (AC-2.2)
-        if extracted.confirmed_at is None:
+        # Correcting an item counts as confirming it (AC-2.2), but only when the
+        # owner does it: a superuser may edit anyone's items, and that must not
+        # widen what the persona is allowed to say
+        memory = session.get(Memory, memory_id)
+        if (
+            extracted.confirmed_at is None
+            and memory is not None
+            and memory.owner_id == current_user.id
+        ):
             extracted.confirmed_at = get_datetime_utc()
     else:
         restoring = rejected is False and extracted.status == ExtractedStatus.REJECTED
