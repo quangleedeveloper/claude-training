@@ -1,0 +1,18 @@
+{
+  "id": "G-109",
+  "from": "AC-8.3",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "question": "What did you used to say about the garden?",
+  "expect": {
+    "fallback": false,
+    "cites": [
+      "I-04"
+    ],
+    "must_include": [
+      "garden doesn't care"
+    ],
+    "must_not_include": []
+  }
+}

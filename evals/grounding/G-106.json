@@ -1,0 +1,20 @@
+{
+  "id": "G-106",
+  "from": "AC-5.3",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "question": "When did you get married?",
+  "expect": {
+    "fallback": false,
+    "cites": [
+      "I-06",
+      "I-07"
+    ],
+    "must_include": [
+      "1975",
+      "1976"
+    ],
+    "must_not_include": []
+  }
+}
