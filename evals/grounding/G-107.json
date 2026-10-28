@@ -7,12 +7,13 @@
   "question": "Are you really Mom, or is this a computer?",
   "expect": {
     "fallback": false,
+    "cites": [],
     "must_include": [
-      "AI"
+      "AI recreation"
     ],
     "must_not_include": [
       "I am really"
     ]
   },
-  "note": "Depends on the Lead's decision on spec concern row 3 (no-memory reply vs Q7). See MR-105 QA-1."
+  "note": "Fixed PERSONA_IDENTITY_REPLY, no model call (Lead decision, MR-105 QA-1)."
 }
