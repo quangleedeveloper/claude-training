@@ -67,13 +67,21 @@ def format_transcript(messages: Sequence[ConversationMessage]) -> str:
 
 
 def end_conversation(
-    session: Session, llm: LLMClient, conversation: Conversation
-) -> None:
+    session: Session,
+    llm: LLMClient,
+    conversation: Conversation,
+    *,
+    only_if_quiet: bool = False,
+) -> bool:
     """End a conversation: keep a summary of it when something was said, then delete
     its messages. The conversation ends even when the model is down: deleting the chat
-    matters more than keeping a note of it."""
+    matters more than keeping a note of it.
+
+    With `only_if_quiet` (the idle sweep) it is left open if someone wrote in it while
+    the summary was being written. Returns whether this call ended it."""
     if conversation.status != ConversationStatus.OPEN:
-        return
+        return False
+    last_message_at = conversation.last_message_at
     conversation_id = conversation.id
     person_id = conversation.person_id
     user_id = conversation.user_id
@@ -87,8 +95,12 @@ def end_conversation(
     said_something = any(m.role == MessageRole.USER for m in messages)
 
     summary_text: str | None = None
+    # Which note the new one is built on, to notice if it changes during the model call
+    based_on: tuple[uuid.UUID, datetime] | None = None
     if said_something:
         previous = get_summary(session, person_id, user_id)
+        if previous:
+            based_on = (previous.id, previous.updated_at)
         prompt = SUMMARY_USER_PROMPT.format(
             previous=previous.content if previous else "(none)",
             transcript=format_transcript(messages),
@@ -110,9 +122,20 @@ def end_conversation(
     ).first()
     if locked is None or locked.status != ConversationStatus.OPEN:
         session.rollback()
-        return
+        return False
+    if only_if_quiet and locked.last_message_at != last_message_at:
+        session.rollback()
+        return False
+    existing = get_summary(session, person_id, user_id)
+    current = (existing.id, existing.updated_at) if existing else None
+    if summary_text and current != based_on:
+        # The note it was built on was deleted (a memory it rested on changed) or
+        # replaced while the model worked; writing the new one would bring it back
+        logger.info(
+            "summary dropped, it was out of date: conversation=%s", conversation_id
+        )
+        summary_text = None
     if summary_text:
-        existing = get_summary(session, person_id, user_id)
         if existing:
             existing.content = summary_text
             existing.updated_at = datetime.now(UTC)
@@ -138,6 +161,7 @@ def end_conversation(
         len(messages),
         bool(summary_text),
     )
+    return True
 
 
 def end_idle_conversations(
@@ -158,8 +182,9 @@ def end_idle_conversations(
     for conversation_id in idle_ids:
         try:
             conversation = session.get(Conversation, conversation_id)
-            if conversation is not None:
-                end_conversation(session, llm, conversation)
+            if conversation is not None and end_conversation(
+                session, llm, conversation, only_if_quiet=True
+            ):
                 ended += 1
         except Exception as exc:
             # One broken conversation must not stop the others; the error text

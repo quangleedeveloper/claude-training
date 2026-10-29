@@ -229,10 +229,12 @@ def test_idle_sweep_keeps_going_after_one_failure(
     broken_id, working_id = broken.id, working.id
     real_end = conversation_summary.end_conversation
 
-    def flaky(session: Session, llm: FakeLLMClient, conversation: Conversation) -> None:
+    def flaky(
+        session: Session, llm: FakeLLMClient, conversation: Conversation, **kwargs: bool
+    ) -> bool:
         if conversation.id == broken_id:
             raise RuntimeError("secret story text")
-        real_end(session, llm, conversation)
+        return real_end(session, llm, conversation, **kwargs)
 
     monkeypatch.setattr(conversation_summary, "end_conversation", flaky)
 
@@ -322,3 +324,95 @@ def test_sweep_loop_survives_a_failed_pass() -> None:
     asyncio.run(asyncio.wait_for(main(), timeout=10))
 
     assert len(calls) >= 3
+
+
+def test_summary_is_not_written_if_its_base_was_deleted_meanwhile(
+    db: Session, llm_client: FakeLLMClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    conversation = create_random_conversation(db)
+    person = db.get(Person, conversation.person_id)
+    assert person is not None
+    create_random_summary(db, person, content="Old note with a stale fact.")
+    talked(db, conversation)
+    person_id, user_id = conversation.person_id, conversation.user_id
+
+    def memory_corrected_meanwhile(system: str, prompt: str) -> str:  # noqa: ARG001
+        with Session(engine) as other:
+            conversation_summary.delete_person_summaries(other, person_id)
+            other.commit()
+        return "New note built on the old one."
+
+    monkeypatch.setattr(llm_client, "answer", memory_corrected_meanwhile)
+
+    assert end_conversation(db, llm_client, conversation) is True
+
+    # The conversation ended, but the note that rested on a deleted one did not return
+    assert get_summary(db, person_id, user_id) is None
+
+
+def test_summary_is_not_written_if_replaced_meanwhile(
+    db: Session, llm_client: FakeLLMClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    conversation = create_random_conversation(db)
+    person = db.get(Person, conversation.person_id)
+    assert person is not None
+    create_random_summary(db, person, content="First note.")
+    talked(db, conversation)
+    person_id, user_id = conversation.person_id, conversation.user_id
+
+    def replaced_meanwhile(system: str, prompt: str) -> str:  # noqa: ARG001
+        with Session(engine) as other:
+            row = get_summary(other, person_id, user_id)
+            assert row is not None
+            row.content = "Written by another conversation."
+            row.updated_at = datetime.now(UTC) + timedelta(seconds=1)
+            other.add(row)
+            other.commit()
+        return "Mine."
+
+    monkeypatch.setattr(llm_client, "answer", replaced_meanwhile)
+
+    end_conversation(db, llm_client, conversation)
+
+    summary = get_summary(db, person_id, user_id)
+    assert summary is not None
+    assert summary.content == "Written by another conversation."
+
+
+def test_idle_sweep_leaves_a_conversation_written_to_meanwhile(
+    db: Session, llm_client: FakeLLMClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    conversation = create_random_conversation(db)
+    talked(db, conversation)
+    backdate(db, conversation, settings.CONVERSATION_IDLE_MINUTES + 1)
+    conversation_id = conversation.id
+
+    def member_writes_meanwhile(system: str, prompt: str) -> str:  # noqa: ARG001
+        with Session(engine) as other:
+            row = other.get(Conversation, conversation_id)
+            assert row is not None
+            row.last_message_at = datetime.now(UTC)
+            other.add(row)
+            other.commit()
+        return "Note."
+
+    monkeypatch.setattr(llm_client, "answer", member_writes_meanwhile)
+
+    assert end_idle_conversations(db, llm_client) == 0
+
+    db.expire_all()
+    after = db.get(Conversation, conversation_id)
+    assert after is not None
+    assert after.status == ConversationStatus.OPEN
+    assert messages_left(db, conversation_id) == 3
+
+
+def test_end_idle_conversations_counts_only_those_it_ended(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    conversation = create_random_conversation(db)
+    backdate(db, conversation, settings.CONVERSATION_IDLE_MINUTES + 1)
+    before = end_idle_conversations(db, llm_client)
+
+    assert before >= 1
+    assert end_idle_conversations(db, llm_client) == 0
