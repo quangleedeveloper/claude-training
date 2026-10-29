@@ -552,6 +552,52 @@ export type NewPassword = {
 };
 
 /**
+ * OfferCreate
+ */
+export type OfferCreate = {
+    /**
+     * Content
+     */
+    content: string;
+};
+
+/**
+ * OfferPublic
+ */
+export type OfferPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * From Name
+     */
+    from_name: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
+ * OffersPublic
+ */
+export type OffersPublic = {
+    /**
+     * Data
+     */
+    data: Array<OfferPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * PersonCreate
  */
 export type PersonCreate = {
@@ -2216,6 +2262,134 @@ export type personsRevokeMemberResponses = {
 };
 
 export type personsRevokeMemberResponse = personsRevokeMemberResponses[keyof personsRevokeMemberResponses];
+
+export type personsReadOffersData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/offers';
+};
+
+export type personsReadOffersErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsReadOffersError = personsReadOffersErrors[keyof personsReadOffersErrors];
+
+export type personsReadOffersResponses = {
+    /**
+     * Successful Response
+     */
+    200: OffersPublic;
+};
+
+export type personsReadOffersResponse = personsReadOffersResponses[keyof personsReadOffersResponses];
+
+export type personsCreateOfferData = {
+    body: OfferCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/offers';
+};
+
+export type personsCreateOfferErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsCreateOfferError = personsCreateOfferErrors[keyof personsCreateOfferErrors];
+
+export type personsCreateOfferResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsCreateOfferResponse = personsCreateOfferResponses[keyof personsCreateOfferResponses];
+
+export type personsAcceptOfferData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Offer Id
+         */
+        offer_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/offers/{offer_id}/accept';
+};
+
+export type personsAcceptOfferErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsAcceptOfferError = personsAcceptOfferErrors[keyof personsAcceptOfferErrors];
+
+export type personsAcceptOfferResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type personsAcceptOfferResponse = personsAcceptOfferResponses[keyof personsAcceptOfferResponses];
+
+export type personsDeclineOfferData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Offer Id
+         */
+        offer_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/offers/{offer_id}';
+};
+
+export type personsDeclineOfferErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsDeclineOfferError = personsDeclineOfferErrors[keyof personsDeclineOfferErrors];
+
+export type personsDeclineOfferResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsDeclineOfferResponse = personsDeclineOfferResponses[keyof personsDeclineOfferResponses];
 
 export type extractedMemoriesReadExtractedMemoriesData = {
     body?: never;

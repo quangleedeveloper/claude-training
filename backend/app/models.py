@@ -230,6 +230,38 @@ class MembersPublic(SQLModel):
     count: int
 
 
+# A memory someone offered from a conversation, waiting for the owner. It is plain text
+# and nothing else: it becomes a memory only when the owner accepts it (and its items
+# then start unconfirmed), so nothing said in a chat reaches the persona unreviewed.
+class MemoryOffer(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    person_id: uuid.UUID = Field(
+        foreign_key="person.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    from_user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    content: str = Field(max_length=5000)
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+class OfferCreate(SQLModel):
+    content: str = Field(min_length=1, max_length=5000)
+
+
+class OfferPublic(SQLModel):
+    id: uuid.UUID
+    content: str
+    # Who offered it: their name, or their email when they have none
+    from_name: str
+    created_at: datetime
+
+
+class OffersPublic(SQLModel):
+    data: list[OfferPublic]
+    count: int
+
+
 # Shared properties
 class MemoryBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
