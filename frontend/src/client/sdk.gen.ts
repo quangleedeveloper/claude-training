@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { extractedMemoriesConfirmExtractedMemoryData, extractedMemoriesConfirmExtractedMemoryErrors, extractedMemoriesConfirmExtractedMemoryResponses, extractedMemoriesDeleteExtractedMemoryData, extractedMemoriesDeleteExtractedMemoryErrors, extractedMemoriesDeleteExtractedMemoryResponses, extractedMemoriesReadExtractedMemoriesData, extractedMemoriesReadExtractedMemoriesErrors, extractedMemoriesReadExtractedMemoriesResponses, extractedMemoriesUnconfirmExtractedMemoryData, extractedMemoriesUnconfirmExtractedMemoryErrors, extractedMemoriesUnconfirmExtractedMemoryResponses, extractedMemoriesUpdateExtractedMemoryData, extractedMemoriesUpdateExtractedMemoryErrors, extractedMemoriesUpdateExtractedMemoryResponses, itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, memoriesConfirmAllExtractedData, memoriesConfirmAllExtractedErrors, memoriesConfirmAllExtractedResponses, memoriesCreateMemoryData, memoriesCreateMemoryErrors, memoriesCreateMemoryResponses, memoriesDeleteMemoryData, memoriesDeleteMemoryErrors, memoriesDeleteMemoryResponses, memoriesLinkMemoryPersonData, memoriesLinkMemoryPersonErrors, memoriesLinkMemoryPersonResponses, memoriesReadMemoriesData, memoriesReadMemoriesErrors, memoriesReadMemoriesResponses, memoriesReadMemoryData, memoriesReadMemoryErrors, memoriesReadMemoryResponses, memoriesUpdateMemoryData, memoriesUpdateMemoryErrors, memoriesUpdateMemoryResponses, memoryFilesDeleteMemoryFileData, memoryFilesDeleteMemoryFileErrors, memoryFilesDeleteMemoryFileResponses, memoryFilesReadMemoryFileContentData, memoryFilesReadMemoryFileContentErrors, memoryFilesReadMemoryFileContentResponses, memoryFilesReadMemoryFilesData, memoryFilesReadMemoryFilesErrors, memoryFilesReadMemoryFilesResponses, memoryFilesRetryMemoryFileData, memoryFilesRetryMemoryFileErrors, memoryFilesRetryMemoryFileResponses, memoryFilesUploadMemoryFilesData, memoryFilesUploadMemoryFilesErrors, memoryFilesUploadMemoryFilesResponses, personsCreatePersonData, personsCreatePersonErrors, personsCreatePersonResponses, personsDeletePersonData, personsDeletePersonErrors, personsDeletePersonResponses, personsReadPersonData, personsReadPersonErrors, personsReadPersonResponses, personsReadPersonsData, personsReadPersonsErrors, personsReadPersonsResponses, personsUpdatePersonData, personsUpdatePersonErrors, personsUpdatePersonResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, searchAskMemoriesData, searchAskMemoriesErrors, searchAskMemoriesResponses, searchSearchMemoriesData, searchSearchMemoriesErrors, searchSearchMemoriesResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
+import type { conversationsEndConversationData, conversationsEndConversationErrors, conversationsEndConversationResponses, conversationsOpenConversationData, conversationsOpenConversationErrors, conversationsOpenConversationResponses, conversationsSendMessageData, conversationsSendMessageErrors, conversationsSendMessageResponses, extractedMemoriesConfirmExtractedMemoryData, extractedMemoriesConfirmExtractedMemoryErrors, extractedMemoriesConfirmExtractedMemoryResponses, extractedMemoriesDeleteExtractedMemoryData, extractedMemoriesDeleteExtractedMemoryErrors, extractedMemoriesDeleteExtractedMemoryResponses, extractedMemoriesReadExtractedMemoriesData, extractedMemoriesReadExtractedMemoriesErrors, extractedMemoriesReadExtractedMemoriesResponses, extractedMemoriesUnconfirmExtractedMemoryData, extractedMemoriesUnconfirmExtractedMemoryErrors, extractedMemoriesUnconfirmExtractedMemoryResponses, extractedMemoriesUpdateExtractedMemoryData, extractedMemoriesUpdateExtractedMemoryErrors, extractedMemoriesUpdateExtractedMemoryResponses, itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, memoriesConfirmAllExtractedData, memoriesConfirmAllExtractedErrors, memoriesConfirmAllExtractedResponses, memoriesCreateMemoryData, memoriesCreateMemoryErrors, memoriesCreateMemoryResponses, memoriesDeleteMemoryData, memoriesDeleteMemoryErrors, memoriesDeleteMemoryResponses, memoriesLinkMemoryPersonData, memoriesLinkMemoryPersonErrors, memoriesLinkMemoryPersonResponses, memoriesReadMemoriesData, memoriesReadMemoriesErrors, memoriesReadMemoriesResponses, memoriesReadMemoryData, memoriesReadMemoryErrors, memoriesReadMemoryResponses, memoriesUpdateMemoryData, memoriesUpdateMemoryErrors, memoriesUpdateMemoryResponses, memoryFilesDeleteMemoryFileData, memoryFilesDeleteMemoryFileErrors, memoryFilesDeleteMemoryFileResponses, memoryFilesReadMemoryFileContentData, memoryFilesReadMemoryFileContentErrors, memoryFilesReadMemoryFileContentResponses, memoryFilesReadMemoryFilesData, memoryFilesReadMemoryFilesErrors, memoryFilesReadMemoryFilesResponses, memoryFilesRetryMemoryFileData, memoryFilesRetryMemoryFileErrors, memoryFilesRetryMemoryFileResponses, memoryFilesUploadMemoryFilesData, memoryFilesUploadMemoryFilesErrors, memoryFilesUploadMemoryFilesResponses, personsCreatePersonData, personsCreatePersonErrors, personsCreatePersonResponses, personsDeletePersonData, personsDeletePersonErrors, personsDeletePersonResponses, personsReadPersonData, personsReadPersonErrors, personsReadPersonResponses, personsReadPersonsData, personsReadPersonsErrors, personsReadPersonsResponses, personsUpdatePersonData, personsUpdatePersonErrors, personsUpdatePersonResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, searchAskMemoriesData, searchAskMemoriesErrors, searchAskMemoriesResponses, searchSearchMemoriesData, searchSearchMemoriesErrors, searchSearchMemoriesResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -743,6 +743,54 @@ export class SearchService {
                 'Content-Type': 'application/json',
                 ...options.headers
             }
+        });
+    }
+}
+
+export class ConversationsService {
+    /**
+     * Open Conversation
+     *
+     * Open a conversation with a person's persona; the first message is the notice.
+     */
+    public static openConversation<ThrowOnError extends boolean = true>(options: Options<conversationsOpenConversationData, ThrowOnError>) {
+        return (options.client ?? client).post<conversationsOpenConversationResponses, conversationsOpenConversationErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/persons/{person_id}/conversations',
+            ...options
+        });
+    }
+    
+    /**
+     * Send Message
+     *
+     * Send a message and stream the persona's reply as server-sent events.
+     */
+    public static sendMessage<ThrowOnError extends boolean = true>(options: Options<conversationsSendMessageData, ThrowOnError>) {
+        return (options.client ?? client).post<conversationsSendMessageResponses, conversationsSendMessageErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/conversations/{conversation_id}/messages',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * End Conversation
+     *
+     * End a conversation and delete its messages. Ending twice is harmless.
+     */
+    public static endConversation<ThrowOnError extends boolean = true>(options: Options<conversationsEndConversationData, ThrowOnError>) {
+        return (options.client ?? client).post<conversationsEndConversationResponses, conversationsEndConversationErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/conversations/{conversation_id}/end',
+            ...options
         });
     }
 }

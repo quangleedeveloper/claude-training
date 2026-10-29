@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.routes import (
+    conversations,
     extracted_memories,
     items,
     login,
@@ -24,6 +25,7 @@ api_router.include_router(memory_files.router)
 api_router.include_router(persons.router)
 api_router.include_router(extracted_memories.router)
 api_router.include_router(search.router)
+api_router.include_router(conversations.router)
 
 
 if settings.FASTAPI_ENV == "development":

@@ -487,6 +487,68 @@ class AskResponse(SQLModel):
     sources: list[SearchHit]
 
 
+class ConversationStatus(StrEnum):
+    OPEN = "open"
+    ENDED = "ended"
+
+
+class MessageRole(StrEnum):
+    USER = "user"
+    PERSONA = "persona"
+
+
+# Enums are plain VARCHAR here, like the other statuses.
+# One sitting between a user and a person's persona. The messages hold what was said
+# and are deleted when the conversation ends; `PersonaTurn` keeps only ids and
+# timings, never text. Everything cascades from the person and from the user.
+class Conversation(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    person_id: uuid.UUID = Field(
+        foreign_key="person.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    status: str = Field(default=ConversationStatus.OPEN, max_length=16)
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+    last_message_at: datetime = Field(default_factory=get_datetime_utc)
+    ended_at: datetime | None = None
+
+
+class ConversationMessage(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    conversation_id: uuid.UUID = Field(
+        foreign_key="conversation.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    role: str = Field(max_length=16)
+    content: str = Field(sa_column=Column(Text, nullable=False))
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+# Audit row, one per answered turn: ids and timings only (no text).
+class PersonaTurn(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    conversation_id: uuid.UUID = Field(
+        foreign_key="conversation.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    item_ids: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    fallback: bool = False
+    first_token_ms: int | None = None
+    total_ms: int | None = None
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+class ConversationOpened(SQLModel):
+    conversation_id: uuid.UUID
+    notice: str
+
+
+class SendMessageRequest(SQLModel):
+    text: str = Field(min_length=1, max_length=2000)
+
+
 # Generic message
 class Message(SQLModel):
     message: str
