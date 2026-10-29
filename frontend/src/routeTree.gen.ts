@@ -21,6 +21,7 @@ import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutMemoriesRouteImport } from './routes/_layout/memories'
 import { Route as LayoutPersonsRouteImport } from './routes/_layout/persons'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutChatPersonIdRouteImport } from './routes/_layout/chat.$personId'
 
 const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
@@ -81,6 +82,11 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutChatPersonIdRoute = LayoutChatPersonIdRouteImport.update({
+  id: '/chat/$personId',
+  path: '/chat/$personId',
+  getParentRoute: () => LayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/memories': typeof LayoutMemoriesRoute
   '/persons': typeof LayoutPersonsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/chat/$personId': typeof LayoutChatPersonIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/persons': typeof LayoutPersonsRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
+  '/chat/$personId': typeof LayoutChatPersonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/_layout/persons': typeof LayoutPersonsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/chat/$personId': typeof LayoutChatPersonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/memories'
     | '/persons'
     | '/settings'
+    | '/chat/$personId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/persons'
     | '/settings'
     | '/'
+    | '/chat/$personId'
   id:
     | '__root__'
     | '/_layout'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/_layout/persons'
     | '/_layout/settings'
     | '/_layout/'
+    | '/_layout/chat/$personId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -260,6 +272,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/chat/$personId': {
+      id: '/_layout/chat/$personId'
+      path: '/chat/$personId'
+      fullPath: '/chat/$personId'
+      preLoaderRoute: typeof LayoutChatPersonIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
@@ -271,6 +290,7 @@ interface LayoutRouteChildren {
   LayoutPersonsRoute: typeof LayoutPersonsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutChatPersonIdRoute: typeof LayoutChatPersonIdRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -281,6 +301,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutPersonsRoute: LayoutPersonsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutChatPersonIdRoute: LayoutChatPersonIdRoute,
 }
 
 const LayoutRouteWithChildren =
