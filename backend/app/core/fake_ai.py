@@ -8,10 +8,11 @@ knowledge: they echo back simple, predictable text so the whole flow can be driv
 import hashlib
 import math
 import re
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any
 
-from app.core.llm import LLMError
+from app.core.llm import ChatTurn, LLMError
 from app.models import EMBEDDING_DIMENSIONS
 
 
@@ -37,6 +38,10 @@ class FakeLLMClient:
         self.extracted: list[dict[str, Any]] | None = None
         self.extract_prompts: list[str] = []
         self.answer_prompts: list[str] = []
+        self.stream_chunks: list[str] = ["Fake ", "answer ", "citing [1]."]
+        self.stream_calls: list[tuple[str, list[ChatTurn]]] = []
+        # Raise LLMError after this many chunks, to test a reply that breaks midway
+        self.error_after: int | None = None
 
     def _check(self) -> None:
         if self.error is not None:
@@ -69,6 +74,21 @@ class FakeLLMClient:
         self._check()
         self.answer_prompts.append(prompt)
         return "Fake answer citing [1]."
+
+    def stream_answer(self, system: str, turns: Sequence[ChatTurn]) -> Iterator[str]:
+        # Counted on the call, not on first iteration, so "no model call" holds
+        # even if a caller never reads the stream
+        self._check()
+        self.stream_calls.append((system, list(turns)))
+        return self._chunks()
+
+    def _chunks(self) -> Iterator[str]:
+        for index, chunk in enumerate(self.stream_chunks):
+            if self.error_after == index:
+                raise LLMError(self.error or "The AI service is unavailable.")
+            yield chunk
+        if self.error_after is not None and self.error_after >= len(self.stream_chunks):
+            raise LLMError(self.error or "The AI service is unavailable.")
 
 
 class FakeTranscriber:
