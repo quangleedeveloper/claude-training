@@ -103,6 +103,10 @@ class Settings(BaseSettings):
     MIN_RELEVANCE_SCORE: float = 0.45
     # Extracted items the model is less sure about than this are dropped
     MIN_EXTRACTION_CONFIDENCE: float = 0.3
+    # Confirmed quotes sent to the persona prompt as examples of how they spoke
+    PERSONA_STYLE_EXAMPLES: int = 5
+    # Earlier messages of the open conversation sent along with a new one
+    PERSONA_HISTORY_TURNS: int = 6
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

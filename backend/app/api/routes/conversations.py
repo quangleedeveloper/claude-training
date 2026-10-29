@@ -27,7 +27,7 @@ from app.models import (
     SendMessageRequest,
     User,
 )
-from app.services import persona_events
+from app.services import persona_graph
 from app.services.persona_events import DoneEvent, TokenEvent
 
 router = APIRouter(tags=["conversations"])
@@ -97,7 +97,7 @@ def stream_turn(
     parts: list[str] = []
     with Session(engine) as session:
         try:
-            for event in persona_events.reply(
+            for event in persona_graph.reply(
                 session,
                 llm,
                 person_id=person_id,

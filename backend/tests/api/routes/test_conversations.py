@@ -23,7 +23,7 @@ from app.models import (
     SearchHit,
     User,
 )
-from app.services import persona_events
+from app.services import persona_graph
 from app.services.persona_events import DoneEvent, PersonaEvent, TokenEvent
 from tests.utils.conversation import create_random_conversation
 from tests.utils.extracted_memory import create_random_extracted_memory
@@ -91,7 +91,7 @@ def script_reply(monkeypatch: pytest.MonkeyPatch, events: list[PersonaEvent]) ->
     def scripted(*_args: Any, **_kwargs: Any) -> Iterator[PersonaEvent]:
         yield from events
 
-    monkeypatch.setattr(persona_events, "reply", scripted)
+    monkeypatch.setattr(persona_graph, "reply", scripted)
 
 
 def own_person(db: Session) -> Person:
@@ -175,6 +175,37 @@ def test_send_message_streams_tokens_then_done(
     ]
 
 
+def test_send_message_replies_from_confirmed_memory(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    person = own_person(db)
+    memory = create_random_memory(db, owner=get_normal_user(db))
+    memory.person_id = person.id
+    db.add(memory)
+    db.commit()
+    item = create_random_extracted_memory(
+        db, memory, content="garden tomatoes", confirmed=True
+    )
+    conversation = create_random_conversation(db, person=person)
+
+    response = client.post(
+        messages_url(conversation),
+        headers=normal_user_token_headers,
+        json={"text": "garden tomatoes"},
+    )
+
+    events = parse_events(response.text)
+    assert events[-1][0] == "done"
+    done = events[-1][1]
+    assert [hit["item"]["id"] for hit in done["sources"]] == [str(item.id)]
+    assert done["fallback"] is False
+    assert done["cited_ids"] == [str(item.id)]
+    assert done["notice"] == PERSONA_NOTICE
+    (turn,) = turns(db, conversation)
+    assert turn.item_ids == [str(item.id)]
+    assert turn.fallback is False
+
+
 def test_send_message_passes_earlier_turns_to_the_reply(
     client: TestClient,
     normal_user_token_headers: dict[str, str],
@@ -191,7 +222,7 @@ def test_send_message_passes_earlier_turns_to_the_reply(
         yield TokenEvent("ok")
         yield DoneEvent(sources=[], fallback=True)
 
-    monkeypatch.setattr(persona_events, "reply", recording)
+    monkeypatch.setattr(persona_graph, "reply", recording)
     for text in ("first", "second"):
         client.post(
             messages_url(conversation),
@@ -414,7 +445,7 @@ def test_send_message_model_error_streams_generic_error(
         yield TokenEvent("Hi ")
         raise error
 
-    monkeypatch.setattr(persona_events, "reply", failing)
+    monkeypatch.setattr(persona_graph, "reply", failing)
     with caplog.at_level(logging.DEBUG):
         response = client.post(
             messages_url(conversation),
@@ -473,7 +504,7 @@ def test_reply_finished_after_the_conversation_ended_is_not_kept(
         yield TokenEvent("lo")
         yield DoneEvent(sources=[], fallback=True)
 
-    monkeypatch.setattr(persona_events, "reply", ended_midway)
+    monkeypatch.setattr(persona_graph, "reply", ended_midway)
     client.post(
         messages_url(conversation),
         headers=normal_user_token_headers,
