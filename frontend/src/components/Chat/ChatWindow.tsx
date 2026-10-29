@@ -60,6 +60,8 @@ const ChatWindow = ({ personId }: ChatWindowProps) => {
   const [failure, setFailure] = useState<string | null>(null)
   const counter = useRef(0)
   const abort = useRef<AbortController | null>(null)
+  // A ref, not the state: two quick submits can both read the same stale `sending`
+  const inFlight = useRef(false)
   const logEnd = useRef<HTMLDivElement | null>(null)
 
   const form = useForm<FormData>({
@@ -124,7 +126,8 @@ const ChatWindow = ({ personId }: ChatWindowProps) => {
   const stopped = blocked !== null
 
   const send = async ({ text }: FormData) => {
-    if (!conversation || sending || stopped) return
+    if (!conversation || inFlight.current || stopped) return
+    inFlight.current = true
     const userId = `message-${++counter.current}`
     const replyId = `message-${++counter.current}`
     form.reset({ text: "" })
@@ -168,6 +171,8 @@ const ChatWindow = ({ personId }: ChatWindowProps) => {
         abort.current.signal,
       )
     } catch (error) {
+      // Leaving the page aborts the request; there is nobody left to tell
+      if (abort.current?.signal.aborted) return
       failed = true
       if (error instanceof ChatStreamError) {
         if (error.status === 403) setBlocked("denied")
@@ -188,9 +193,16 @@ const ChatWindow = ({ personId }: ChatWindowProps) => {
       form.setValue("text", text)
       setFailure(GENERIC_ERROR)
     }
+    inFlight.current = false
     setSending(false)
-    form.setFocus("text")
   }
+
+  // Back to the input once it is enabled again: focusing it inside `send` would run
+  // while the textarea is still disabled, and a keyboard user would lose their place
+  const { setFocus } = form
+  useEffect(() => {
+    if (!sending && blocked === null) setFocus("text")
+  }, [sending, blocked, setFocus])
 
   const heading = person.data
     ? `Talk with ${person.data.name}`
@@ -282,7 +294,12 @@ const ChatWindow = ({ personId }: ChatWindowProps) => {
                     className="min-h-12"
                     disabled={sending || stopped}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter" && !event.shiftKey) {
+                      // Enter while an input method is composing picks a candidate
+                      if (
+                        event.key === "Enter" &&
+                        !event.shiftKey &&
+                        !event.nativeEvent.isComposing
+                      ) {
                         event.preventDefault()
                         form.handleSubmit(send)()
                       }

@@ -256,4 +256,94 @@ test.describe("Chat window", () => {
       expect(consoleText.join("\n")).not.toContain(secret)
     }
   })
+
+  test("Focus returns to the message box after a reply", async ({ page }) => {
+    await send(page, persona.fact)
+    await expect(log(page)).toContainText("Fake answer")
+
+    await expect(input(page)).toBeEnabled()
+    await expect(input(page)).toBeFocused()
+  })
+
+  test("Cancel keeps the conversation going", async ({ page }) => {
+    await page.getByRole("button", { name: "End conversation" }).click()
+    await page.getByRole("button", { name: "Cancel" }).click()
+    await expect(page.getByRole("dialog")).toHaveCount(0)
+
+    await send(page, persona.fact)
+    await expect(log(page)).toContainText("Fake answer")
+  })
+
+  test("Ending really ends the conversation", async ({ page }) => {
+    const opened = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/conversations") &&
+        response.request().method() === "POST",
+    )
+    await page.goto(`/chat/${persona.personId}`)
+    const { conversation_id: conversationId } = await (await opened).json()
+
+    await page.getByRole("button", { name: "End conversation" }).click()
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "End conversation" })
+      .click()
+    await page.waitForURL("/persons")
+
+    const token = await page.evaluate(() =>
+      localStorage.getItem("access_token"),
+    )
+    const response = await page.request.post(
+      `${process.env.VITE_API_URL}/api/v1/conversations/${conversationId}/messages`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { text: "Are you still there?" },
+      },
+    )
+    expect(response.status()).toBe(409)
+  })
+
+  test("Access removed does not sign the user out", async ({ page }) => {
+    await page.route(MESSAGES, (route) =>
+      route.fulfill({
+        status: 403,
+        json: { detail: "Not enough permissions" },
+      }),
+    )
+
+    await send(page, "Hello")
+    await expect(page.getByRole("alert")).toContainText("no longer have access")
+
+    await page.waitForTimeout(500)
+    expect(
+      await page.evaluate(() => localStorage.getItem("access_token")),
+    ).toBeTruthy()
+    await expect(page).toHaveURL(/\/chat\//)
+  })
+
+  test("A person without access or that does not exist", async ({ page }) => {
+    const OPEN = "**/api/v1/persons/*/conversations"
+    await page.route(OPEN, (route) =>
+      route.fulfill({
+        status: 403,
+        json: { detail: "Not enough permissions" },
+      }),
+    )
+    await page.goto(`/chat/${persona.personId}`)
+    await expect(page.getByRole("alert")).toContainText(
+      "You don't have access to talk with this person.",
+    )
+    expect(
+      await page.evaluate(() => localStorage.getItem("access_token")),
+    ).toBeTruthy()
+
+    await page.unroute(OPEN)
+    await page.route(OPEN, (route) =>
+      route.fulfill({ status: 404, json: { detail: "Person not found" } }),
+    )
+    await page.goto(`/chat/${persona.personId}`)
+    await expect(page.getByRole("alert")).toContainText(
+      "This person could not be found.",
+    )
+  })
 })
