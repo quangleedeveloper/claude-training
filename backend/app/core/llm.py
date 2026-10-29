@@ -1,14 +1,20 @@
 import base64
 import json
 import logging
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 import httpx
 import ollama
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 from app.core.config import settings
@@ -27,6 +33,14 @@ class LLMError(UserFacingError):
     """
 
 
+@dataclass(frozen=True)
+class ChatTurn:
+    """One earlier message of a conversation, as the model should see it."""
+
+    role: Literal["user", "assistant"]
+    content: str
+
+
 class LLMClient(Protocol):
     """Everything the AI features need from a model; tests use a fake of this."""
 
@@ -39,6 +53,10 @@ class LLMClient(Protocol):
     def describe_image(self, path: Path) -> str: ...
 
     def answer(self, system: str, prompt: str) -> str: ...
+
+    def stream_answer(
+        self, system: str, turns: Sequence[ChatTurn]
+    ) -> Iterator[str]: ...
 
 
 class OllamaClient:
@@ -140,6 +158,29 @@ class OllamaClient:
             settings.OLLAMA_CHAT_MODEL,
             [SystemMessage(system), HumanMessage(prompt)],
         ).strip()
+
+    def stream_answer(self, system: str, turns: Sequence[ChatTurn]) -> Iterator[str]:
+        messages: list[BaseMessage] = [SystemMessage(system)]
+        messages.extend(
+            HumanMessage(turn.content)
+            if turn.role == "user"
+            else AIMessage(turn.content)
+            for turn in turns
+        )
+        chat = ChatOllama(
+            model=settings.OLLAMA_CHAT_MODEL,
+            base_url=self.base_url,
+            temperature=0,
+            client_kwargs={"timeout": self.timeout},
+        )
+        # A generator raises while it is iterated, not when called, so the
+        # translation has to wrap the iteration itself
+        with self._translate_errors():
+            for chunk in chat.stream(messages):
+                if not isinstance(chunk.content, str):
+                    raise LLMError("Ollama returned no message content")
+                if chunk.content:
+                    yield chunk.content
 
 
 def get_llm_client() -> LLMClient:
