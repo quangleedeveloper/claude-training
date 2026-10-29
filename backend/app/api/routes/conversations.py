@@ -9,7 +9,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
-from sqlmodel import Session, col, delete, func, select
+from sqlmodel import Session, col, func, select
 
 from app.api.deps import CurrentUser, LLMClientDep, SessionDep
 from app.api.routes.persons import get_person_for_conversation
@@ -25,9 +25,10 @@ from app.models import (
     MessageRole,
     PersonaTurn,
     SendMessageRequest,
+    SummaryPublic,
     User,
 )
-from app.services import persona_graph
+from app.services import conversation_summary, persona_graph
 from app.services.persona_events import DoneEvent, TokenEvent
 
 router = APIRouter(tags=["conversations"])
@@ -87,6 +88,7 @@ def stream_turn(
     person_name: str,
     history: list[ConversationMessage],
     text: str,
+    summary: str | None,
     turn_number: int,
 ) -> Iterator[str]:
     """Server-sent events for one turn. It opens its own session: the request's may
@@ -104,6 +106,7 @@ def stream_turn(
                 person_name=person_name,
                 history=history,
                 message=text,
+                summary=summary,
             ):
                 if isinstance(event, TokenEvent):
                     if first_token_ms is None:
@@ -208,6 +211,8 @@ def send_message(
         + 1
     )
     person_id, person_name = person.id, person.name
+    remembered = conversation_summary.get_summary(session, person_id, current_user.id)
+    summary = remembered.content if remembered else None
     for earlier in history:
         session.expunge(earlier)
     session.add(
@@ -228,6 +233,7 @@ def send_message(
             person_name=person_name,
             history=history,
             text=message_in.text,
+            summary=summary,
             turn_number=turn_number,
         ),
         media_type="text/event-stream",
@@ -237,22 +243,44 @@ def send_message(
 
 @router.post("/conversations/{conversation_id}/end", response_model=Message)
 def end_conversation(
-    session: SessionDep, current_user: CurrentUser, conversation_id: uuid.UUID
+    session: SessionDep,
+    current_user: CurrentUser,
+    llm: LLMClientDep,
+    conversation_id: uuid.UUID,
 ) -> Any:
     """
-    End a conversation and delete its messages. Ending twice is harmless.
+    End a conversation, keep a short summary of it and delete its messages.
     """
     conversation = get_conversation_or_error(session, current_user, conversation_id)
-    if conversation.status == ConversationStatus.OPEN:
-        # MR-106 saves the summary here, before the messages are deleted
-        conversation.status = ConversationStatus.ENDED
-        conversation.ended_at = datetime.now(UTC)
-        session.add(conversation)
-        session.exec(
-            delete(ConversationMessage).where(
-                col(ConversationMessage.conversation_id) == conversation.id
-            )
-        )
-        session.commit()
-        logger.info("conversation ended: conversation=%s", conversation.id)
+    conversation_summary.end_conversation(session, llm, conversation)
     return Message(message="Conversation ended")
+
+
+@router.get("/persons/{person_id}/summary", response_model=SummaryPublic)
+def read_summary(
+    session: SessionDep, current_user: CurrentUser, person_id: uuid.UUID
+) -> Any:
+    """
+    Read the caller's own summary of earlier conversations with a person.
+    """
+    get_person_for_conversation(session, current_user, person_id)
+    summary = conversation_summary.get_summary(session, person_id, current_user.id)
+    if not summary:
+        raise HTTPException(status_code=404, detail="Summary not found")
+    return summary
+
+
+@router.delete("/persons/{person_id}/summary", response_model=Message)
+def delete_summary(
+    session: SessionDep, current_user: CurrentUser, person_id: uuid.UUID
+) -> Any:
+    """
+    Delete the caller's own summary of earlier conversations with a person.
+    """
+    get_person_for_conversation(session, current_user, person_id)
+    summary = conversation_summary.get_summary(session, person_id, current_user.id)
+    if not summary:
+        raise HTTPException(status_code=404, detail="Summary not found")
+    session.delete(summary)
+    session.commit()
+    return Message(message="Summary deleted")

@@ -667,6 +667,20 @@ export type SendMessageRequest = {
 };
 
 /**
+ * SummaryPublic
+ */
+export type SummaryPublic = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
  * Token
  */
 export type Token = {
@@ -2367,6 +2381,66 @@ export type conversationsEndConversationResponses = {
 };
 
 export type conversationsEndConversationResponse = conversationsEndConversationResponses[keyof conversationsEndConversationResponses];
+
+export type conversationsDeleteSummaryData = {
+    body?: never;
+    path: {
+        /**
+         * Person Id
+         */
+        person_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{person_id}/summary';
+};
+
+export type conversationsDeleteSummaryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsDeleteSummaryError = conversationsDeleteSummaryErrors[keyof conversationsDeleteSummaryErrors];
+
+export type conversationsDeleteSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type conversationsDeleteSummaryResponse = conversationsDeleteSummaryResponses[keyof conversationsDeleteSummaryResponses];
+
+export type conversationsReadSummaryData = {
+    body?: never;
+    path: {
+        /**
+         * Person Id
+         */
+        person_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{person_id}/summary';
+};
+
+export type conversationsReadSummaryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsReadSummaryError = conversationsReadSummaryErrors[keyof conversationsReadSummaryErrors];
+
+export type conversationsReadSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: SummaryPublic;
+};
+
+export type conversationsReadSummaryResponse = conversationsReadSummaryResponses[keyof conversationsReadSummaryResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;

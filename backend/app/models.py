@@ -5,7 +5,7 @@ from typing import Self
 
 from pgvector.sqlalchemy import Vector
 from pydantic import EmailStr, computed_field, field_validator, model_validator
-from sqlalchemy import JSON, BigInteger, Column, Index, Text
+from sqlalchemy import JSON, BigInteger, Column, Index, Text, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -523,6 +523,30 @@ class ConversationMessage(SQLModel, table=True):
     role: str = Field(max_length=16)
     content: str = Field(sa_column=Column(Text, nullable=False))
     created_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+# What one user talked about with a person's persona, kept after the conversation
+# ends and its messages are deleted. Private to that user: it can hold what they said
+# about themselves, so it is never logged and no endpoint returns another user's.
+class ConversationSummary(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("person_id", "user_id", name="uq_conversationsummary_member"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    person_id: uuid.UUID = Field(
+        foreign_key="person.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    content: str = Field(max_length=2000)
+    updated_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+class SummaryPublic(SQLModel):
+    content: str
+    updated_at: datetime
 
 
 # Audit row, one per answered turn: ids and timings only (no text).

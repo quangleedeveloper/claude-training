@@ -1,3 +1,5 @@
+import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -12,6 +14,7 @@ from starlette.middleware.cors import CORSMiddleware
 from app.api.main import api_router
 from app.core.checkpoint import setup_checkpoint_tables
 from app.core.config import settings
+from app.services.conversation_summary import run_idle_sweep
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +41,19 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             "Could not create the LangGraph checkpoint tables; processing files "
             "will fail until they exist (run scripts/prestart.sh)"
         )
-    yield
+    # Conversations nobody has written in for a while are ended and summarized
+    sweep = (
+        asyncio.create_task(run_idle_sweep())
+        if settings.CONVERSATION_SWEEP_SECONDS > 0
+        else None
+    )
+    try:
+        yield
+    finally:
+        if sweep is not None:
+            sweep.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await sweep
 
 
 app = FastAPI(
