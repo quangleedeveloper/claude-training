@@ -411,7 +411,7 @@ def test_send_message_model_error_streams_generic_error(
     conversation = own_conversation(db)
 
     def failing(*_args: Any, **_kwargs: Any) -> Iterator[PersonaEvent]:
-        yield TokenEvent("Hel")
+        yield TokenEvent("Hi ")
         raise error
 
     monkeypatch.setattr(persona_events, "reply", failing)
@@ -467,7 +467,7 @@ def test_reply_finished_after_the_conversation_ended_is_not_kept(
     conversation = own_conversation(db)
 
     def ended_midway(*_args: Any, **_kwargs: Any) -> Iterator[PersonaEvent]:
-        yield TokenEvent("Hel")
+        yield TokenEvent("Hi ")
         # The user ends the chat while the reply is still being written
         client.post(end_url(conversation), headers=normal_user_token_headers)
         yield TokenEvent("lo")

@@ -99,9 +99,9 @@ def test_the_fake_can_fail_midway() -> None:
 
 
 def test_ollama_streams_non_empty_chunks(monkeypatch: pytest.MonkeyPatch) -> None:
-    recorder = fake_stream(monkeypatch, ["Hel", "", "lo"])
+    recorder = fake_stream(monkeypatch, ["Hi ", "", "lo"])
 
-    assert list(client().stream_answer("sys", TURNS)) == ["Hel", "lo"]
+    assert list(client().stream_answer("sys", TURNS)) == ["Hi ", "lo"]
     assert recorder.chat_kwargs["model"] == settings.OLLAMA_CHAT_MODEL
     assert recorder.chat_kwargs["base_url"] == BASE
     assert recorder.chat_kwargs["temperature"] == 0
@@ -135,7 +135,7 @@ def test_stream_error_mid_reply_is_generic(
 ) -> None:
     fake_stream(
         monkeypatch,
-        ["Hel", "lo"],
+        ["Hi ", "lo"],
         error=httpx.ReadError("secret story text"),
         error_after=1,
     )
@@ -145,7 +145,7 @@ def test_stream_error_mid_reply_is_generic(
             for chunk in client().stream_answer("sys", TURNS):
                 seen.append(chunk)
 
-    assert seen == ["Hel"]
+    assert seen == ["Hi "]
     assert str(raised.value) == "The AI service is unavailable. Is Ollama running?"
     assert "secret story text" not in caplog.text
     assert BASE not in str(raised.value)
