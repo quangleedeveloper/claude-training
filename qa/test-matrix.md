@@ -2,7 +2,7 @@
 
 ## Persona conversation
 
-spec: specs/persona-conversation/spec.md · tickets: MR-101 to MR-109 · drafted by QA with Claude, 2026-10-28
+spec: specs/persona-conversation/spec.md · tickets: MR-101 to MR-109, plus MR-110 to MR-114 (screens, blocked on Q12) · drafted by QA with Claude, 2026-10-28
 fixture: `fixtures/families/thomas.json` · eval cases: `evals/grounding/G-101.json` to `G-117.json`
 
 Paths in *Test or eval* are under `backend/` unless they start with `evals/`. Each row is written before the code, so it is the target the dev hands to Claude. Rows marked *eval* need the real local model; their unit halves use the fake.
@@ -78,7 +78,30 @@ Paths in *Test or eval* are under `backend/` unless they start with `evals/`. Ea
 | AC-N6.1 | Injected story text: reply stays grounded, system prompt byte-for-byte unchanged | unit + eval | security | `backend/tests/services/test_persona_graph.py::test_injected_story_does_not_change_system_prompt`, `evals/grounding/G-113.json` | MR-105, MR-109 | todo |
 | AC-N6.1 | Injected member message: no invented memory | unit + eval | security | `backend/tests/services/test_persona_graph.py::test_injected_message_stays_in_user_turn`, `evals/grounding/G-114.json` | MR-105, MR-109 | todo |
 | AC-N7.1 | Persona-related change triggers the eval job; any invented memory fails it | CI | compliance | CI workflow from MR-109 | MR-109 | todo |
+| AC-13.1 | Opening the chat shows the notice at the top and it stays visible after messages | e2e | happy path | `frontend/tests/chat.spec.ts::Notice stays visible` | MR-110 | todo |
+| AC-13.2 | A sent message appears at once, input is disabled while the reply streams, reply grows in an aria-live region | e2e | happy path | `frontend/tests/chat.spec.ts::Reply streams in` | MR-110 | todo |
+| AC-13.3 | A valid [n] links to its source under the reply; an [n] with no source stays plain text | e2e | happy path | `frontend/tests/chat.spec.ts::Citations link to sources` | MR-110 | todo |
+| AC-13.4 | Fixed no-memory reply shows with no sources; an uncited reply shows the not-backed note | e2e | negative | `frontend/tests/chat.spec.ts::No-memory and uncited replies` | MR-110 | todo |
+| AC-13.5 | A stream error shows a generic message, keeps the typed text and shows no server text | e2e | negative | `frontend/tests/chat.spec.ts::Errors keep the typed text` | MR-110 | todo |
+| AC-13.6 | End asks for a confirm, then ends the chat and leaves it | e2e | happy path | `frontend/tests/chat.spec.ts::End conversation` | MR-110 | todo |
+| AC-13.7 | 403 or 409 on send shows a clear message and disables sending | e2e | security | `frontend/tests/chat.spec.ts::Access removed or ended` | MR-110 | todo |
+| AC-14.1 | A saved summary is shown as What we talked about | e2e | happy path | `frontend/tests/recall.spec.ts::Summary is shown` | MR-111 | todo |
+| AC-14.2 | No summary shows the empty state, not an error toast | e2e | negative | `frontend/tests/recall.spec.ts::Empty state` | MR-111 | todo |
+| AC-14.3 | Deleting the summary after a confirm removes it | e2e | happy path | `frontend/tests/recall.spec.ts::Delete summary` | MR-111 | todo |
+| AC-14.4 | Another user's summary for the same person is never shown | e2e | security | `frontend/tests/recall.spec.ts::Only my summary` | MR-111 | todo |
+| AC-15.1 | Invite stays disabled until the 18-or-older tick is set | e2e | happy path | `frontend/tests/sharing.spec.ts::Adult tick required` | MR-113 | todo |
+| AC-15.2 | A known and an unknown email show the same confirmation | e2e | security | `frontend/tests/sharing.spec.ts::Same answer for any email` | MR-113 | todo |
+| AC-15.3 | Members list shows name and email; revoke asks for a confirm and removes the member | e2e | happy path | `frontend/tests/sharing.spec.ts::Revoke member` | MR-113 | todo |
+| AC-15.4 | Shared with me lists the persons by name only and opens the chat; empty state when none | e2e | happy path | `frontend/tests/sharing.spec.ts::Shared with me` | MR-113 | todo |
+| AC-15.5 | A revoked member loses the person from the list and an open chat shows access removed | e2e | security | `frontend/tests/sharing.spec.ts::Revoked member` | MR-113 | todo |
+| AC-15.6 | GET /persons/shared returns only id and name of persons the caller is a member of | integration | happy path | `backend/tests/api/routes/test_persons.py::test_read_shared_persons` | MR-112 | todo |
+| AC-15.6 | Owner's own persons, outsiders, superusers and revoked members never get extra rows | integration | security | `backend/tests/api/routes/test_persons.py::test_shared_persons_scope` | MR-112 | todo |
+| AC-16.1 | A member offers text from the chat and sees that the family decides | e2e | happy path | `frontend/tests/offers.spec.ts::Offer a memory` | MR-114 | todo |
+| AC-16.2 | Owner accepts an offer and is told the new memory is not yet confirmed, with a link | e2e | happy path | `frontend/tests/offers.spec.ts::Accept offer` | MR-114 | todo |
+| AC-16.3 | Declining asks for a confirm and removes the offer | e2e | negative | `frontend/tests/offers.spec.ts::Decline offer` | MR-114 | todo |
+| AC-16.4 | A member sees no offers list and the endpoint is 403 | e2e | security | `frontend/tests/offers.spec.ts::Members cannot list offers` | MR-114 | todo |
+| AC-N8.1 | No message, reply, source, summary or offer text in storage, URL, query cache or console | e2e | compliance | `frontend/tests/chat.spec.ts::Nothing stored in the browser` | MR-110 | todo |
 
-**Coverage:** 69 rows for 56 ACs. By kind: happy path 18, negative 17, security 15, compliance 14, regression 5.
+**Coverage:** 92 rows for 78 ACs (the 23 new rows for MR-110 to MR-114 are proposed, pending Q12). By kind: happy path 30, negative 21, security 21, compliance 15, regression 5.
 
 **Questions raised in tickets** (the feedback loop, step 5): all answered by the BA on 2026-10-28; the spec and these rows were updated in the same PR.

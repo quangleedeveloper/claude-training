@@ -60,7 +60,7 @@ From the client's answers:
 - Next demo 2026-11-11, date to confirm: backend API on synthetic data only (Q9).
 
 ## Out of scope
-- App screens and the robot itself for this round: backend first (training scope).
+- App screens and the robot itself for this round: backend first (training scope). Screens for talking with the persona are proposed in FR-13 to FR-16 and wait for the Lead's answer to Q12.
 - Sounding like her (voice cloning or voice output): a separate brief later (Q1).
 - Users under 18: a separate brief later, designed with guardian consent and privacy-law review (Q4).
 
@@ -80,3 +80,4 @@ Sent to the client in `tickets/MR-100.md` on 2026-10-27. Answers land here in th
 | Q9 | When is "the next demo", and what has to be shown there: a working API, or a clickable conversation? | Scope and slicing; frontend is out of scope this round | Demo 2026-11-11 (date to confirm): backend API only; open a conversation, show a grounded reply with sources, a “no memory” reply, and recall across conversations, on synthetic data | answered |
 | Q10 | How fast must a reply feel? The local model is slow on CPU (the app allows each call up to 300 s). | Decides streaming, model size and hardware, without moving to a hosted AI | First words within ~3 s (streaming), full reply within ~30 s on the demo machine; if CPU can't, smaller local model or local GPU, never hosted AI | answered |
 | Q11 | How will families judge that it "feels like talking to Mom"? | We need a measurable outcome before we can test it | Blind rating of 20 replies by two family members who knew her: “sounds like her” and “true to her memories” average 4+/5, zero invented memories; after launch, count “not how she talked” flags | answered |
+| Q12 | Q9 put app screens out of scope, but the persona can only be used through the API. Do you want screens for talking with it (chat, summary, sharing, offering a memory), and for which date? | Without screens no family member can use what the backend now does; adding them is a scope change | | pending |
