@@ -572,3 +572,83 @@ def test_delete_owner_deletes_members(db: Session) -> None:
         .where(col(PersonMember.person_id) == person_id)
     ).one()
     assert left == 0
+
+
+def test_stream_turn_stops_if_the_conversation_ended_since_the_request(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    # Imported here: it is the function behind the streamed body
+    from app.api.routes.conversations import stream_turn
+
+    person = create_random_person(db)
+    guest = add_member(db, person)
+    conversation = create_random_conversation(db, user=guest, person=person)
+    conversation.user_id = guest.id
+    conversation.status = ConversationStatus.ENDED
+    db.add(conversation)
+    db.commit()
+
+    events = list(
+        stream_turn(
+            llm_client,
+            conversation_id=conversation.id,
+            person_id=person.id,
+            person_name="Margaret",
+            history=[],
+            text=GARDEN,
+            summary=None,
+            turn_number=1,
+        )
+    )
+
+    assert len(events) == 1
+    assert events[0].startswith("event: error")
+    assert llm_client.stream_calls == []
+
+
+def test_no_summary_is_written_for_someone_who_lost_access_meanwhile(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    from app.services.conversation_summary import end_conversation, get_summary
+
+    person = create_random_person(db)
+    guest = create_random_user(db)
+    # Opened while a member, then revoked before it was ended
+    conversation = create_random_conversation(db, user=guest, person=person)
+    conversation.user_id = guest.id
+    db.add(conversation)
+    db.commit()
+    add_message(db, conversation, MessageRole.USER, "I miss her")
+    person_id, user_id = person.id, guest.id
+
+    end_conversation(db, llm_client, conversation)
+
+    assert get_summary(db, person_id, user_id) is None
+    db.refresh(conversation)
+    assert conversation.status == ConversationStatus.ENDED
+
+
+def test_revoke_leaves_no_message_in_any_conversation_of_the_member(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    person = own_person(db)
+    guest = add_member(db, person)
+    conversation = create_random_conversation(db, user=guest, person=person)
+    conversation.user_id = guest.id
+    db.add(conversation)
+    db.commit()
+    add_message(db, conversation, MessageRole.USER, "hello")
+    add_message(db, conversation, MessageRole.PERSONA, "hi")
+    conversation_id = conversation.id
+
+    client.delete(
+        f"{members_url(person)}/{guest.id}", headers=normal_user_token_headers
+    )
+
+    db.expire_all()
+    left = db.exec(
+        select(func.count())
+        .select_from(ConversationMessage)
+        .where(col(ConversationMessage.conversation_id) == conversation_id)
+    ).one()
+    assert left == 0
