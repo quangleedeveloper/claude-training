@@ -20,6 +20,7 @@ from app.models import (
     Message,
     get_datetime_utc,
 )
+from app.services.conversation_summary import delete_person_summaries
 from app.services.processing import extract_memory_story
 
 router = APIRouter(prefix="/memories", tags=["memories"])
@@ -195,6 +196,9 @@ def delete_memory(
     if not current_user.is_superuser and (memory.owner_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     crud.remove_memory_files(session=session, storage=storage, memory_ids=[memory.id])
+    # A summary may repeat something from this memory, so those go with it
+    if memory.person_id is not None:
+        delete_person_summaries(session, memory.person_id)
     session.delete(memory)
     session.commit()
     return Message(message="Memory deleted successfully")

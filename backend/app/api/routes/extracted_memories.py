@@ -18,6 +18,7 @@ from app.models import (
     User,
     get_datetime_utc,
 )
+from app.services.conversation_summary import delete_person_summaries
 from app.services.extraction import embedding_text
 
 router = APIRouter(
@@ -60,6 +61,14 @@ def check_editable(
         raise HTTPException(
             status_code=409, detail="Restore the item before editing it"
         )
+
+
+def forget_summaries(session: Session, memory_id: uuid.UUID) -> None:
+    """Delete the summaries of the person this memory is linked to, if any. The
+    caller commits."""
+    memory = session.get(Memory, memory_id)
+    if memory is not None and memory.person_id is not None:
+        delete_person_summaries(session, memory.person_id)
 
 
 @router.get("/", response_model=ExtractedMemoriesPublic)
@@ -148,6 +157,9 @@ def update_extracted_memory(
         )
     extracted.updated_at = get_datetime_utc()
     session.add(extracted)
+    if update or rejected is True:
+        # A summary may still hold the old value or the rejected fact
+        forget_summaries(session, memory_id)
     session.commit()
     session.refresh(extracted)
     return extracted
@@ -213,5 +225,6 @@ def delete_extracted_memory(
     """
     extracted = get_extracted_or_error(session, current_user, memory_id, extracted_id)
     session.delete(extracted)
+    forget_summaries(session, memory_id)
     session.commit()
     return Message(message="Extracted memory deleted successfully")

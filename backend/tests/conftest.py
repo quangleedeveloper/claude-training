@@ -28,6 +28,14 @@ def upload_dir(tmp_path_factory: pytest.TempPathFactory) -> Generator[Path]:
         yield path
 
 
+@pytest.fixture(scope="session", autouse=True)
+def no_idle_sweep() -> Generator[None]:
+    """The idle sweep would call the real model; tests run a pass by hand."""
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setattr(settings, "CONVERSATION_SWEEP_SECONDS", 0)
+        yield
+
+
 @pytest.fixture(autouse=True)
 def media_processor() -> Generator[FakeMediaProcessor]:
     """Tests never run the real processor; set `.error` to simulate a failure."""
