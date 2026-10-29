@@ -1,4 +1,5 @@
-import { EllipsisVertical } from "lucide-react"
+import { Link } from "@tanstack/react-router"
+import { EllipsisVertical, MessageCircle } from "lucide-react"
 import { useState } from "react"
 
 import type { PersonPublic } from "@/client"
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import DeletePerson from "./DeletePerson"
@@ -27,6 +29,12 @@ export const PersonActionsMenu = ({ person }: PersonActionsMenuProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link to="/chat/$personId" params={{ personId: person.id }}>
+            <MessageCircle />
+            Talk
+          </Link>
+        </DropdownMenuItem>
         <EditPerson person={person} onSuccess={() => setOpen(false)} />
         <DeletePerson id={person.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
