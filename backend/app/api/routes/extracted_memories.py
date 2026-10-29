@@ -13,6 +13,7 @@ from app.models import (
     ExtractedMemoryPublic,
     ExtractedMemoryUpdate,
     ExtractedStatus,
+    Memory,
     Message,
     User,
     get_datetime_utc,
@@ -31,6 +32,18 @@ def get_extracted_or_error(
     extracted = session.get(ExtractedMemory, extracted_id)
     if not extracted or extracted.memory_id != memory_id:
         raise HTTPException(status_code=404, detail="Extracted memory not found")
+    return extracted
+
+
+def get_own_extracted_or_error(
+    session: Session, current_user: User, memory_id: uuid.UUID, extracted_id: uuid.UUID
+) -> ExtractedMemory:
+    """Like `get_extracted_or_error`, but only for the memory's owner: confirming
+    decides what the persona may say, so superusers get no exception."""
+    extracted = get_extracted_or_error(session, current_user, memory_id, extracted_id)
+    memory = session.get(Memory, memory_id)
+    if memory is None or memory.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     return extracted
 
 
@@ -115,6 +128,16 @@ def update_extracted_memory(
         extracted.embedding = vector
         extracted.was_edited = True
         extracted.status = ExtractedStatus.EDITED
+        # Correcting an item counts as confirming it (AC-2.2), but only when the
+        # owner does it: a superuser may edit anyone's items, and that must not
+        # widen what the persona is allowed to say
+        memory = session.get(Memory, memory_id)
+        if (
+            extracted.confirmed_at is None
+            and memory is not None
+            and memory.owner_id == current_user.id
+        ):
+            extracted.confirmed_at = get_datetime_utc()
     else:
         restoring = rejected is False and extracted.status == ExtractedStatus.REJECTED
     if rejected is True:
@@ -127,6 +150,54 @@ def update_extracted_memory(
     session.add(extracted)
     session.commit()
     session.refresh(extracted)
+    return extracted
+
+
+@router.post("/{extracted_id}/confirm", response_model=ExtractedMemoryPublic)
+def confirm_extracted_memory(
+    session: SessionDep,
+    current_user: CurrentUser,
+    memory_id: uuid.UUID,
+    extracted_id: uuid.UUID,
+) -> Any:
+    """
+    Confirm an extracted memory so the persona may use it.
+    """
+    extracted = get_own_extracted_or_error(
+        session, current_user, memory_id, extracted_id
+    )
+    if extracted.status == ExtractedStatus.REJECTED:
+        raise HTTPException(
+            status_code=409, detail="Restore the item before confirming it"
+        )
+    if extracted.confirmed_at is None:
+        extracted.confirmed_at = get_datetime_utc()
+        extracted.updated_at = get_datetime_utc()
+        session.add(extracted)
+        session.commit()
+        session.refresh(extracted)
+    return extracted
+
+
+@router.delete("/{extracted_id}/confirm", response_model=ExtractedMemoryPublic)
+def unconfirm_extracted_memory(
+    session: SessionDep,
+    current_user: CurrentUser,
+    memory_id: uuid.UUID,
+    extracted_id: uuid.UUID,
+) -> Any:
+    """
+    Undo the confirmation so the persona stops using the item.
+    """
+    extracted = get_own_extracted_or_error(
+        session, current_user, memory_id, extracted_id
+    )
+    if extracted.confirmed_at is not None:
+        extracted.confirmed_at = None
+        extracted.updated_at = get_datetime_utc()
+        session.add(extracted)
+        session.commit()
+        session.refresh(extracted)
     return extracted
 
 

@@ -77,6 +77,16 @@ export type Body_memory_files_upload_memory_files = {
 };
 
 /**
+ * ConfirmAllResult
+ */
+export type ConfirmAllResult = {
+    /**
+     * Confirmed
+     */
+    confirmed: number;
+};
+
+/**
  * ExtractedCategory
  */
 export type ExtractedCategory = 'event' | 'person' | 'place' | 'fact' | 'quote';
@@ -135,6 +145,10 @@ export type ExtractedMemoryPublic = {
     status: ExtractedStatus;
     source: ExtractedSource;
     /**
+     * Confirmed At
+     */
+    confirmed_at?: string | null;
+    /**
      * Created At
      */
     created_at?: string | null;
@@ -142,6 +156,10 @@ export type ExtractedMemoryPublic = {
      * Updated At
      */
     updated_at?: string | null;
+    /**
+     * Confirmed
+     */
+    readonly confirmed: boolean;
 };
 
 /**
@@ -806,6 +824,116 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * AskResponse
+ */
+export type AskResponseWritable = {
+    /**
+     * Answer
+     */
+    answer: string;
+    /**
+     * Sources
+     */
+    sources: Array<SearchHitWritable>;
+};
+
+/**
+ * ExtractedMemoriesPublic
+ */
+export type ExtractedMemoriesPublicWritable = {
+    /**
+     * Data
+     */
+    data: Array<ExtractedMemoryPublicWritable>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * ExtractedMemoryPublic
+ */
+export type ExtractedMemoryPublicWritable = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Memory Id
+     */
+    memory_id: string;
+    /**
+     * File Id
+     */
+    file_id?: string | null;
+    category: ExtractedCategory;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * People
+     */
+    people: Array<string>;
+    /**
+     * Event Date Text
+     */
+    event_date_text?: string | null;
+    /**
+     * Location
+     */
+    location?: string | null;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    status: ExtractedStatus;
+    source: ExtractedSource;
+    /**
+     * Confirmed At
+     */
+    confirmed_at?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Updated At
+     */
+    updated_at?: string | null;
+};
+
+/**
+ * SearchHit
+ */
+export type SearchHitWritable = {
+    item: ExtractedMemoryPublicWritable;
+    /**
+     * Memory Title
+     */
+    memory_title: string;
+    /**
+     * Person Name
+     */
+    person_name: string;
+    /**
+     * Score
+     */
+    score: number;
+};
+
+/**
+ * SearchResults
+ */
+export type SearchResultsWritable = {
+    /**
+     * Data
+     */
+    data: Array<SearchHitWritable>;
 };
 
 export type loginLoginAccessTokenData = {
@@ -1536,6 +1664,36 @@ export type memoriesUpdateMemoryResponses = {
 
 export type memoriesUpdateMemoryResponse = memoriesUpdateMemoryResponses[keyof memoriesUpdateMemoryResponses];
 
+export type memoriesConfirmAllExtractedData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}/confirm-all';
+};
+
+export type memoriesConfirmAllExtractedErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesConfirmAllExtractedError = memoriesConfirmAllExtractedErrors[keyof memoriesConfirmAllExtractedErrors];
+
+export type memoriesConfirmAllExtractedResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmAllResult;
+};
+
+export type memoriesConfirmAllExtractedResponse = memoriesConfirmAllExtractedResponses[keyof memoriesConfirmAllExtractedResponses];
+
 export type memoriesLinkMemoryPersonData = {
     body: MemoryPersonLink;
     path: {
@@ -1979,6 +2137,74 @@ export type extractedMemoriesUpdateExtractedMemoryResponses = {
 };
 
 export type extractedMemoriesUpdateExtractedMemoryResponse = extractedMemoriesUpdateExtractedMemoryResponses[keyof extractedMemoriesUpdateExtractedMemoryResponses];
+
+export type extractedMemoriesUnconfirmExtractedMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * Extracted Id
+         */
+        extracted_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/extracted/{extracted_id}/confirm';
+};
+
+export type extractedMemoriesUnconfirmExtractedMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type extractedMemoriesUnconfirmExtractedMemoryError = extractedMemoriesUnconfirmExtractedMemoryErrors[keyof extractedMemoriesUnconfirmExtractedMemoryErrors];
+
+export type extractedMemoriesUnconfirmExtractedMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtractedMemoryPublic;
+};
+
+export type extractedMemoriesUnconfirmExtractedMemoryResponse = extractedMemoriesUnconfirmExtractedMemoryResponses[keyof extractedMemoriesUnconfirmExtractedMemoryResponses];
+
+export type extractedMemoriesConfirmExtractedMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * Extracted Id
+         */
+        extracted_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/extracted/{extracted_id}/confirm';
+};
+
+export type extractedMemoriesConfirmExtractedMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type extractedMemoriesConfirmExtractedMemoryError = extractedMemoriesConfirmExtractedMemoryErrors[keyof extractedMemoriesConfirmExtractedMemoryErrors];
+
+export type extractedMemoriesConfirmExtractedMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtractedMemoryPublic;
+};
+
+export type extractedMemoriesConfirmExtractedMemoryResponse = extractedMemoriesConfirmExtractedMemoryResponses[keyof extractedMemoriesConfirmExtractedMemoryResponses];
 
 export type searchSearchMemoriesData = {
     body: SearchRequest;

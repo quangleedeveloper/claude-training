@@ -316,3 +316,25 @@ def test_search_and_ask_hold_no_transaction_during_the_model_call(
         app.dependency_overrides.pop(get_db, None)
 
     assert in_transaction_during_embed == [False, False]
+
+
+def test_search_unchanged_by_confirm_step(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    memory = create_random_memory(db, get_superuser(db))
+    unconfirmed = create_random_extracted_memory(
+        db, memory, content="Grandma baked sourdough"
+    )
+    confirmed = create_random_extracted_memory(
+        db, memory, content="Grandma baked sourdough rolls", confirmed=True
+    )
+
+    response = client.post(
+        SEARCH,
+        headers=superuser_token_headers,
+        json={"query": "sourdough", "memory_id": str(memory.id)},
+    )
+
+    assert response.status_code == 200
+    found = {hit["item"]["id"] for hit in response.json()["data"]}
+    assert found == {str(unconfirmed.id), str(confirmed.id)}

@@ -2,12 +2,13 @@ import uuid
 
 from sqlmodel import Session
 
-from app.models import ExtractedStatus, Memory, User
+from app.models import ExtractedStatus, Memory, Person, User
 from app.services.ask_graph import NO_ANSWER, ask, format_context
-from app.services.retrieval import search_extracted
+from app.services.retrieval import persona_quotes, search_extracted, search_persona
 from tests.utils.extracted_memory import create_random_extracted_memory
 from tests.utils.llm import FakeLLMClient
 from tests.utils.memory import create_random_memory
+from tests.utils.person import create_random_person
 from tests.utils.user import get_superuser
 
 
@@ -179,3 +180,134 @@ def test_format_context_lists_the_details(
     assert "when: June 1975" in text
     assert "where: Brighton" in text
     assert "people: Mum, Dad" in text
+
+
+def persona_memory(db: Session) -> tuple[Person, Memory]:
+    """A person and one of their owner's memories, linked to them."""
+    person = create_random_person(db)
+    owner = db.get(User, person.owner_id)
+    memory = create_random_memory(db, owner)
+    memory.person_id = person.id
+    db.add(memory)
+    db.commit()
+    db.refresh(memory)
+    return person, memory
+
+
+def test_search_persona_skips_unconfirmed(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    person, memory = persona_memory(db)
+    confirmed = create_random_extracted_memory(
+        db, memory, content="Grandma baked bread on Sundays", confirmed=True
+    )
+    create_random_extracted_memory(db, memory, content="Grandma baked bread daily")
+
+    hits = search_persona(db, person.id, llm_client, "who baked bread")
+
+    assert [h.item.id for h in hits] == [confirmed.id]
+    assert hits[0].item.confirmed is True
+    assert hits[0].memory_title == memory.title
+    # Undoing the confirmation takes it out again
+    confirmed.confirmed_at = None
+    db.add(confirmed)
+    db.commit()
+    assert search_persona(db, person.id, llm_client, "who baked bread") == []
+
+
+def test_search_persona_skips_rejected_confirmed(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    person, memory = persona_memory(db)
+    create_random_extracted_memory(
+        db,
+        memory,
+        content="Grandma baked bread on Sundays",
+        status=ExtractedStatus.REJECTED,
+        confirmed=True,
+    )
+
+    assert search_persona(db, person.id, llm_client, "who baked bread") == []
+
+
+def test_search_persona_only_this_persons_memories(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    person, memory = persona_memory(db)
+    owner = db.get(User, person.owner_id)
+    other_person = create_random_person(db, owner)
+    other_memory = create_random_memory(db, owner)
+    other_memory.person_id = other_person.id
+    db.add(other_memory)
+    db.commit()
+    unlinked = create_random_memory(db, owner)
+    mine = create_random_extracted_memory(
+        db, memory, content="Grandma baked bread", confirmed=True
+    )
+    create_random_extracted_memory(
+        db, other_memory, content="Grandpa baked bread", confirmed=True
+    )
+    create_random_extracted_memory(
+        db, unlinked, content="Aunt baked bread", confirmed=True
+    )
+
+    hits = search_persona(db, person.id, llm_client, "who baked bread")
+
+    assert [h.item.id for h in hits] == [mine.id]
+
+
+def test_search_persona_respects_the_limit(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    person, memory = persona_memory(db)
+    for number in range(3):
+        create_random_extracted_memory(
+            db, memory, content=f"Bread story {number}", confirmed=True
+        )
+
+    assert len(search_persona(db, person.id, llm_client, "bread", limit=2)) == 2
+
+
+def test_search_extracted_still_finds_unconfirmed_items(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    memory = create_random_memory(db)
+    item = create_random_extracted_memory(db, memory, content="Grandma baked bread")
+
+    hits = search_extracted(db, owner_of(db, memory), llm_client, "bread")
+
+    assert [h.item.id for h in hits] == [item.id]
+    assert hits[0].item.confirmed is False
+
+
+def test_persona_quotes_are_confirmed_quotes_newest_first(db: Session) -> None:
+    person, memory = persona_memory(db)
+    older = create_random_extracted_memory(
+        db, memory, content="Older quote.", category="quote", confirmed=True
+    )
+    newer = create_random_extracted_memory(
+        db, memory, content="Newer quote.", category="quote", confirmed=True
+    )
+    create_random_extracted_memory(
+        db, memory, content="Not confirmed.", category="quote"
+    )
+    create_random_extracted_memory(
+        db,
+        memory,
+        content="Rejected.",
+        category="quote",
+        status=ExtractedStatus.REJECTED,
+        confirmed=True,
+    )
+    create_random_extracted_memory(
+        db, memory, content="A fact.", category="fact", confirmed=True
+    )
+    elsewhere = create_random_memory(db, db.get(User, person.owner_id))
+    create_random_extracted_memory(
+        db, elsewhere, content="Unlinked.", category="quote", confirmed=True
+    )
+
+    quotes = persona_quotes(db, person.id, limit=10)
+
+    assert [q.id for q in quotes] == [newer.id, older.id]
+    assert [q.id for q in persona_quotes(db, person.id, limit=1)] == [newer.id]

@@ -6,6 +6,7 @@ from sqlmodel import Session, col, select
 from app.core.config import settings
 from app.core.llm import LLMClient
 from app.models import (
+    ExtractedCategory,
     ExtractedMemory,
     ExtractedMemoryPublic,
     ExtractedStatus,
@@ -59,4 +60,69 @@ def search_extracted(
             score=round(1 - float(dist), 4),
         )
         for extracted, memory, dist in session.exec(statement).all()
+    ]
+
+
+def search_persona(
+    session: Session,
+    person_id: uuid.UUID,
+    llm: LLMClient,
+    query: str,
+    *,
+    limit: int | None = None,
+) -> list[SearchHit]:
+    """Nearest confirmed memories of one person to `query`, for the persona.
+
+    The persona may only say what the family confirmed or corrected (editing an item
+    confirms it), so that rule is part of the query itself: an unconfirmed or
+    rejected item, or one from a memory linked to someone else, can never reach the
+    prompt. The route checks that the caller may talk to this person first.
+    """
+    # End the caller's read transaction: a database connection must not wait on a
+    # slow model call
+    session.rollback()
+    (vector,) = llm.embed([query])
+    # pgvector adds cosine_distance to the column at runtime; type checkers can't see it
+    distance = cast(Any, ExtractedMemory.embedding).cosine_distance(vector)
+    statement = (
+        select(ExtractedMemory, Memory, distance)
+        .join(Memory, col(Memory.id) == col(ExtractedMemory.memory_id))
+        .where(
+            col(Memory.person_id) == person_id,
+            col(ExtractedMemory.status) != ExtractedStatus.REJECTED,
+            col(ExtractedMemory.confirmed_at).is_not(None),
+        )
+        .order_by(distance)
+        .limit(limit or settings.RETRIEVAL_TOP_K)
+    )
+    return [
+        SearchHit(
+            item=ExtractedMemoryPublic.model_validate(extracted),
+            memory_title=memory.title,
+            person_name=memory.person_name,
+            score=round(1 - float(dist), 4),
+        )
+        for extracted, memory, dist in session.exec(statement).all()
+    ]
+
+
+def persona_quotes(
+    session: Session, person_id: uuid.UUID, limit: int
+) -> list[ExtractedMemoryPublic]:
+    """The person's confirmed quotes, newest first: examples of how they spoke."""
+    statement = (
+        select(ExtractedMemory)
+        .join(Memory, col(Memory.id) == col(ExtractedMemory.memory_id))
+        .where(
+            col(Memory.person_id) == person_id,
+            col(ExtractedMemory.category) == ExtractedCategory.QUOTE,
+            col(ExtractedMemory.status) != ExtractedStatus.REJECTED,
+            col(ExtractedMemory.confirmed_at).is_not(None),
+        )
+        .order_by(col(ExtractedMemory.created_at).desc())
+        .limit(limit)
+    )
+    return [
+        ExtractedMemoryPublic.model_validate(extracted)
+        for extracted in session.exec(statement).all()
     ]
