@@ -1,0 +1,97 @@
+name: Grounding Evals
+
+# `validate` needs no model and runs on GitHub's runners. `run` drives the cases through
+# the real local model on a self-hosted runner labelled `ollama` (synthetic data only).
+# Repository variables switch it on and set how strict it is:
+#   GROUNDING_EVALS_RUN   "true" to run the job at all (off until the runner exists)
+#   GROUNDING_EVALS_GATE  "enforce" to fail the PR on a bad run (default: report only,
+#                         because the pass-rate threshold is not agreed yet, MR-109)
+#   EVAL_MIN_PASS_RATE    pass rate the gate needs, default 0.9
+on:
+  pull_request:
+    paths:
+      - "evals/**"
+      - "fixtures/**"
+      - "qa/**"
+      - "specs/persona-conversation/spec.md"
+      - "backend/app/core/prompt.py"
+      - "backend/app/core/config.py"
+      - "backend/app/core/llm.py"
+      - "backend/app/services/persona_graph.py"
+      - "backend/app/services/retrieval.py"
+      - "backend/scripts/run_grounding_evals.py"
+      - "backend/scripts/validate_evals.py"
+      - "CLAUDE.md"
+      - ".claude/skills/**"
+      - ".github/workflows/grounding-evals.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+      - name: Check the cases and fixtures
+        run: python backend/scripts/validate_evals.py
+
+  run:
+    # A self-hosted runner must never run code from a fork
+    if: >-
+      vars.GROUNDING_EVALS_RUN == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository)
+    needs: validate
+    runs-on: [self-hosted, ollama]
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Create .env
+        run: cp .env.example .env
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "latest-known"
+      - run: docker compose down -v --remove-orphans
+      - run: docker compose up -d --wait db
+      - name: Migrate DB
+        run: uv run bash scripts/prestart.sh
+        working-directory: backend
+      - name: Run the persona evals
+        # Report only unless the repository variable says to enforce
+        continue-on-error: ${{ vars.GROUNDING_EVALS_GATE != 'enforce' }}
+        env:
+          EVAL_REPEATS: "3"
+          EVAL_MIN_PASS_RATE: ${{ vars.EVAL_MIN_PASS_RATE || '0.9' }}
+        run: >-
+          uv run python scripts/run_grounding_evals.py
+          --json ../grounding-report.json --markdown ../grounding-report.md
+        working-directory: backend
+      - name: Store the report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: grounding-report
+          path: |
+            grounding-report.json
+            grounding-report.md
+          if-no-files-found: ignore
+      - if: always()
+        run: docker compose down -v --remove-orphans
