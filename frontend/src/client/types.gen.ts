@@ -292,6 +292,56 @@ export type ItemsPublic = {
 };
 
 /**
+ * MemberInvite
+ */
+export type MemberInvite = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Adult Confirmed
+     */
+    adult_confirmed: true;
+};
+
+/**
+ * MemberPublic
+ */
+export type MemberPublic = {
+    /**
+     * User Id
+     */
+    user_id: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Full Name
+     */
+    full_name?: string | null;
+    /**
+     * Invited At
+     */
+    invited_at: string;
+};
+
+/**
+ * MembersPublic
+ */
+export type MembersPublic = {
+    /**
+     * Data
+     */
+    data: Array<MemberPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * MemoriesPublic
  */
 export type MemoriesPublic = {
@@ -2072,6 +2122,100 @@ export type personsUpdatePersonResponses = {
 };
 
 export type personsUpdatePersonResponse = personsUpdatePersonResponses[keyof personsUpdatePersonResponses];
+
+export type personsReadMembersData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/members';
+};
+
+export type personsReadMembersErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsReadMembersError = personsReadMembersErrors[keyof personsReadMembersErrors];
+
+export type personsReadMembersResponses = {
+    /**
+     * Successful Response
+     */
+    200: MembersPublic;
+};
+
+export type personsReadMembersResponse = personsReadMembersResponses[keyof personsReadMembersResponses];
+
+export type personsInviteMemberData = {
+    body: MemberInvite;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/members';
+};
+
+export type personsInviteMemberErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsInviteMemberError = personsInviteMemberErrors[keyof personsInviteMemberErrors];
+
+export type personsInviteMemberResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsInviteMemberResponse = personsInviteMemberResponses[keyof personsInviteMemberResponses];
+
+export type personsRevokeMemberData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/members/{user_id}';
+};
+
+export type personsRevokeMemberErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsRevokeMemberError = personsRevokeMemberErrors[keyof personsRevokeMemberErrors];
+
+export type personsRevokeMemberResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsRevokeMemberResponse = personsRevokeMemberResponses[keyof personsRevokeMemberResponses];
 
 export type extractedMemoriesReadExtractedMemoriesData = {
     body?: never;

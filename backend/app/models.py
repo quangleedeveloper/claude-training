@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Self
+from typing import Literal, Self
 
 from pgvector.sqlalchemy import Vector
 from pydantic import EmailStr, computed_field, field_validator, model_validator
@@ -190,6 +190,43 @@ class PersonPublic(PersonBase):
 
 class PersonsPublic(SQLModel):
     data: list[PersonPublic]
+    count: int
+
+
+# Someone the owner let talk with a person's persona. A member reaches the persona's
+# replies and the sources they cite, nothing else: memory, file and extracted-item
+# routes stay owner-only. The owner's tick is the only record of age (no birth date).
+class PersonMember(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("person_id", "user_id", name="uq_personmember_member"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    person_id: uuid.UUID = Field(
+        foreign_key="person.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
+    )
+    adult_confirmed: bool = False
+    invited_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+# `Literal[True]`: a missing or false confirmation is a 422 and nothing is stored
+class MemberInvite(SQLModel):
+    email: EmailStr
+    adult_confirmed: Literal[True]
+
+
+class MemberPublic(SQLModel):
+    user_id: uuid.UUID
+    email: EmailStr
+    full_name: str | None = None
+    invited_at: datetime
+
+
+class MembersPublic(SQLModel):
+    data: list[MemberPublic]
     count: int
 
 
