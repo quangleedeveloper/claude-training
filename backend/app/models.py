@@ -248,6 +248,15 @@ class MemoryOffer(SQLModel, table=True):
 class OfferCreate(SQLModel):
     content: str = Field(min_length=1, max_length=5000)
 
+    @field_validator("content")
+    @classmethod
+    def not_blank(cls, value: str) -> str:
+        # "   " would pass min_length and become an empty memory when accepted
+        value = value.strip()
+        if not value:
+            raise ValueError("content cannot be blank")
+        return value
+
 
 class OfferPublic(SQLModel):
     id: uuid.UUID

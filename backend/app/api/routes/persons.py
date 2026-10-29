@@ -270,6 +270,8 @@ def create_offer(
     Offer a memory to the family; the owner decides whether it becomes one.
     """
     person = get_person_for_conversation(session, current_user, id)
+    # Lock the person's row so two offers at once cannot both slip under the cap
+    session.exec(select(Person.id).where(col(Person.id) == person.id).with_for_update())
     waiting = session.exec(
         select(func.count())
         .select_from(MemoryOffer)
@@ -334,7 +336,8 @@ def accept_offer(
     # Locked, so a double click cannot make two memories out of one offer
     offer = get_offer_or_error(session, person.id, offer_id, lock=True)
     memory = Memory(
-        title=f"Offered: {offer.content[:OFFER_TITLE_CHARS]}".strip(),
+        # One line: the offer text may hold newlines
+        title=f"Offered: {' '.join(offer.content.split())[:OFFER_TITLE_CHARS]}",
         person_name=person.name,
         content=offer.content,
         owner_id=current_user.id,

@@ -418,3 +418,42 @@ def test_offer_text_is_not_logged(
     assert "memory offered" in caplog.text
     assert "offer accepted" in caplog.text
     assert secret not in caplog.text
+
+
+@pytest.mark.parametrize("content", ["   ", "\n\n", " \t "])
+def test_blank_offer_is_refused(
+    client: TestClient,
+    normal_user_token_headers: dict[str, str],
+    db: Session,
+    content: str,
+) -> None:
+    person = own_person(db)
+
+    response = client.post(
+        offers_url(person), headers=normal_user_token_headers, json={"content": content}
+    )
+
+    assert response.status_code == 422
+    assert offer_count(db, person) == 0
+
+
+def test_offer_text_is_trimmed_and_the_title_is_one_line(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    person = own_person(db)
+    client.post(
+        offers_url(person),
+        headers=normal_user_token_headers,
+        json={"content": "\n\n  She loved\ntulips.  \n"},
+    )
+    offer = db.exec(
+        select(MemoryOffer).where(col(MemoryOffer.person_id) == person.id)
+    ).one()
+    assert offer.content == "She loved\ntulips."
+
+    response = client.post(
+        f"{offers_url(person, offer.id)}/accept", headers=normal_user_token_headers
+    )
+
+    assert response.json()["title"] == "Offered: She loved tulips."
+    assert response.json()["content"] == "She loved\ntulips."
