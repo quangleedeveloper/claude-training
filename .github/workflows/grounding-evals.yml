@@ -2,6 +2,8 @@ name: Grounding Evals
 
 # `validate` needs no model and runs on GitHub's runners. `run` drives the cases through
 # the real local model on a self-hosted runner labelled `ollama` (synthetic data only).
+# The runner must be a dedicated machine with no secrets: anyone who can open a PR in this
+# repository can run code on it, and the job resets port 5433 and its own compose project.
 # Repository variables switch it on and set how strict it is:
 #   GROUNDING_EVALS_RUN   "true" to run the job at all (off until the runner exists)
 #   GROUNDING_EVALS_GATE  "enforce" to fail the PR on a bad run (default: report only,
@@ -18,6 +20,16 @@ on:
       - "backend/app/core/config.py"
       - "backend/app/core/llm.py"
       - "backend/app/services/persona_graph.py"
+      - "backend/app/services/persona_events.py"
+      - "backend/app/services/conversation_summary.py"
+      - "backend/app/services/extraction*.py"
+      - "backend/app/services/ask_graph.py"
+      - "backend/app/api/routes/conversations.py"
+      - "backend/app/models.py"
+      - "backend/pyproject.toml"
+      - ".env.example"
+      - ".claude/hooks/**"
+      - ".claude/agents/**"
       - "backend/app/services/retrieval.py"
       - "backend/scripts/run_grounding_evals.py"
       - "backend/scripts/validate_evals.py"
@@ -69,15 +81,16 @@ jobs:
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "latest-known"
-      - run: docker compose down -v --remove-orphans
-      - run: docker compose up -d --wait db
+      - run: docker compose -p grounding-evals down -v --remove-orphans
+      - run: docker compose -p grounding-evals up -d --wait db
       - name: Migrate DB
         run: uv run bash scripts/prestart.sh
         working-directory: backend
       - name: Run the persona evals
-        # Report only unless the repository variable says to enforce
-        continue-on-error: ${{ vars.GROUNDING_EVALS_GATE != 'enforce' }}
+        # Report only unless the repository variable says to enforce. Report-only still
+        # fails on a crash or a missing model (exit 2), so a broken run is never green.
         env:
+          EVAL_REPORT_ONLY: ${{ vars.GROUNDING_EVALS_GATE != 'enforce' && 'true' || 'false' }}
           EVAL_REPEATS: "3"
           EVAL_MIN_PASS_RATE: ${{ vars.EVAL_MIN_PASS_RATE || '0.9' }}
         run: >-
@@ -92,6 +105,6 @@ jobs:
           path: |
             grounding-report.json
             grounding-report.md
-          if-no-files-found: ignore
+          if-no-files-found: error
       - if: always()
-        run: docker compose down -v --remove-orphans
+        run: docker compose -p grounding-evals down -v --remove-orphans

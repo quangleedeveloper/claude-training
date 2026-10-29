@@ -29,6 +29,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import httpx
 from fastapi.testclient import TestClient
 from sqlmodel import Session, col, select
 
@@ -160,7 +161,7 @@ def build_report(results: list[CaseResult], repeats: int) -> dict[str, Any]:
         "pass_rate": round(passed / len(results), 4) if results else 0.0,
         "invented_memories": sum(result.invented for result in results),
         "flaky": [result.id for result in results if result.flaky],
-        # Whole turn through the test client, informational only
+        # Open, earlier turns and the question through the test client, informational
         "turn_seconds_p50": round(percentile(seconds, 50), 2),
         "turn_seconds_p90": round(percentile(seconds, 90), 2),
         "results": [
@@ -201,7 +202,7 @@ def render_markdown(report: dict[str, Any], min_pass_rate: float) -> str:
         f"{report['repeats']} run(s) per case",
         "",
         f"Model `{report['chat_model']}` (embeddings `{report['embed_model']}`, "
-        f"backend `{report['ai_backend']}`). Whole-turn time p50 "
+        f"backend `{report['ai_backend']}`). Time of a whole case (open, earlier turns, question) p50 "
         f"{report['turn_seconds_p50']} s, p90 {report['turn_seconds_p90']} s "
         "(informational: the speed check is the manual run on the demo machine).",
         "",
@@ -426,6 +427,18 @@ def run_case_once(client: TestClient, case: dict[str, Any], seeded: Seeded) -> R
     return score
 
 
+def run_case(client: TestClient, case: dict[str, Any], seeded: Seeded) -> RunScore:
+    """`run_case_once`, but an error from the API fails this case instead of the run."""
+    try:
+        return run_case_once(client, case, seeded)
+    except httpx.HTTPStatusError as exc:
+        return RunScore(
+            failures=[f"the API answered {exc.response.status_code}"],
+        )
+    except KeyError as exc:
+        return RunScore(failures=[f"the fixture has no {exc.args[0]!r}"])
+
+
 def load_cases(only: set[str] | None) -> list[dict[str, Any]]:
     cases = [
         json.loads(path.read_text(encoding="utf-8"))
@@ -457,7 +470,7 @@ def run_cases(
                     )
                     seeded_by_fixture[key] = seed_fixture(fixtures[key], llm)
                 runs = [
-                    run_case_once(client, case, seeded_by_fixture[key])
+                    run_case(client, case, seeded_by_fixture[key])
                     for _ in range(repeats)
                 ]
                 results.append(judge_case(case, runs))
@@ -493,6 +506,13 @@ def main(argv: list[str] | None = None) -> int:
         type=float,
         default=float(os.environ.get("EVAL_MIN_PASS_RATE", DEFAULT_MIN_PASS_RATE)),
     )
+    parser.add_argument(
+        "--report-only",
+        action="store_true",
+        default=os.environ.get("EVAL_REPORT_ONLY", "").lower() in ("1", "true"),
+        help="exit 0 even when the gate would fail; a crash or a missing model "
+        "(exit 2) still fails",
+    )
     parser.add_argument("--json", type=Path, help="write the full report here")
     parser.add_argument("--markdown", type=Path, help="write the summary here")
     args = parser.parse_args(argv)
@@ -520,7 +540,9 @@ def main(argv: list[str] | None = None) -> int:
     if summary_file:
         with open(summary_file, "a", encoding="utf-8") as handle:
             handle.write(markdown)
-    return 1 if gate_failed(summary, args.min_pass_rate) else 0
+    if gate_failed(summary, args.min_pass_rate) and not args.report_only:
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
