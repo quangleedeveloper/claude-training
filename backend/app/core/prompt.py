@@ -45,3 +45,13 @@ Memories:
 {context}
 
 Question: {question}"""
+
+# Shown first in every conversation and repeated on every reply, so a client can
+# always display it. Fixed text, no placeholders: tests compare it byte for byte.
+PERSONA_NOTICE = (
+    "You are talking with an AI recreation built from your family's memories. "
+    "It is not the real person and it can be wrong."
+)
+
+# The whole reply when no confirmed memory matches the message. No model is called.
+PERSONA_NO_MEMORY = "I don't remember that. It isn't in the memories my family shared."
