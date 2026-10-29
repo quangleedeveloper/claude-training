@@ -87,6 +87,9 @@ def last_prompt(llm: FakeLLMClient) -> str:
         "Are you a robot?",
         "Is it really you?",
         "Is this really you?",
+        "Wait, are you a real person?",
+        "Are you an AI?",
+        "You're not really her, are you?",
     ],
 )
 def test_identity_question_gets_fixed_reply(
@@ -115,6 +118,8 @@ def test_identity_question_gets_fixed_reply(
         "Is this a real photo of the lake?",
         "Is that you in the picnic photo?",
         "Are you a person who liked gardening?",
+        "Are you a good cook?",
+        "Are you still there?",
     ],
 )
 def test_identity_patterns_ignore_ordinary_questions(message: str) -> None:

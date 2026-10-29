@@ -73,8 +73,11 @@ PERSONA_IDENTITY_PATTERNS = (
     r"\bare you (?:really |actually |truly )?(?:my )?(?:mom|mum|mummy|mommy|mother|"
     r"mama|mẹ|dad|daddy|father|papa|grandma|grandmother|grandpa|grandfather|granny|"
     r"nana|her|him)" + _END,
-    r"\bare you (?:a |an )?(?:real|human|person|robot|bot|ai|machine|computer|"
-    r"program|ghost)" + _END,
+    r"\bare you (?:a |an )?(?:real )?(?:real|human|person|robot|bot|ai|machine|"
+    r"computer|program|ghost)" + _END,
+    r"\byou(?:'re| are) not (?:really|actually|truly) (?:my )?(?:mom|mum|mummy|"
+    r"mommy|mother|mama|mẹ|dad|daddy|father|papa|grandma|grandmother|grandpa|"
+    r"grandfather|granny|nana|her|him|them)" + _END,
     r"\bis (?:this|that) (?:really |actually )?(?:a |an )?(?:computer|ai|robot|bot|"
     r"machine|program|recording|real|you)" + _END,
     r"\bis it (?:really |actually )?you" + _END,
