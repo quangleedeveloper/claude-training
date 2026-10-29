@@ -458,6 +458,31 @@ def test_end_conversation(
     assert len(turns(db, conversation)) == 1
 
 
+def test_reply_finished_after_the_conversation_ended_is_not_kept(
+    client: TestClient,
+    normal_user_token_headers: dict[str, str],
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    conversation = own_conversation(db)
+
+    def ended_midway(*_args: Any, **_kwargs: Any) -> Iterator[PersonaEvent]:
+        yield TokenEvent("Hel")
+        # The user ends the chat while the reply is still being written
+        client.post(end_url(conversation), headers=normal_user_token_headers)
+        yield TokenEvent("lo")
+        yield DoneEvent(sources=[], fallback=True)
+
+    monkeypatch.setattr(persona_events, "reply", ended_midway)
+    client.post(
+        messages_url(conversation),
+        headers=normal_user_token_headers,
+        json={"text": TEXT},
+    )
+
+    assert stored_messages(db, conversation) == []
+
+
 def test_end_conversation_twice(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:

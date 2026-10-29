@@ -112,13 +112,23 @@ def stream_turn(
                     yield server_event("token", {"text": event.text})
                 elif isinstance(event, DoneEvent):
                     total_ms = elapsed_ms(started)
-                    session.add(
-                        ConversationMessage(
-                            conversation_id=conversation_id,
-                            role=MessageRole.PERSONA,
-                            content="".join(parts),
+                    # The user may have ended the conversation while this reply was
+                    # streaming. Ending deletes the messages, so a reply saved after
+                    # that would outlive it; the lock makes the check and the insert
+                    # one step against `end_conversation`.
+                    still_open = session.exec(
+                        select(Conversation.status)
+                        .where(col(Conversation.id) == conversation_id)
+                        .with_for_update()
+                    ).first()
+                    if still_open == ConversationStatus.OPEN:
+                        session.add(
+                            ConversationMessage(
+                                conversation_id=conversation_id,
+                                role=MessageRole.PERSONA,
+                                content="".join(parts),
+                            )
                         )
-                    )
                     session.add(
                         PersonaTurn(
                             conversation_id=conversation_id,
