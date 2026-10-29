@@ -87,6 +87,20 @@ export type ConfirmAllResult = {
 };
 
 /**
+ * ConversationOpened
+ */
+export type ConversationOpened = {
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    /**
+     * Notice
+     */
+    notice: string;
+};
+
+/**
  * ExtractedCategory
  */
 export type ExtractedCategory = 'event' | 'person' | 'place' | 'fact' | 'quote';
@@ -640,6 +654,16 @@ export type SearchResults = {
      * Data
      */
     data: Array<SearchHit>;
+};
+
+/**
+ * SendMessageRequest
+ */
+export type SendMessageRequest = {
+    /**
+     * Text
+     */
+    text: string;
 };
 
 /**
@@ -2255,6 +2279,94 @@ export type searchAskMemoriesResponses = {
 };
 
 export type searchAskMemoriesResponse = searchAskMemoriesResponses[keyof searchAskMemoriesResponses];
+
+export type conversationsOpenConversationData = {
+    body?: never;
+    path: {
+        /**
+         * Person Id
+         */
+        person_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{person_id}/conversations';
+};
+
+export type conversationsOpenConversationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsOpenConversationError = conversationsOpenConversationErrors[keyof conversationsOpenConversationErrors];
+
+export type conversationsOpenConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConversationOpened;
+};
+
+export type conversationsOpenConversationResponse = conversationsOpenConversationResponses[keyof conversationsOpenConversationResponses];
+
+export type conversationsSendMessageData = {
+    body: SendMessageRequest;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}/messages';
+};
+
+export type conversationsSendMessageErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsSendMessageError = conversationsSendMessageErrors[keyof conversationsSendMessageErrors];
+
+export type conversationsSendMessageResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type conversationsEndConversationData = {
+    body?: never;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}/end';
+};
+
+export type conversationsEndConversationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsEndConversationError = conversationsEndConversationErrors[keyof conversationsEndConversationErrors];
+
+export type conversationsEndConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type conversationsEndConversationResponse = conversationsEndConversationResponses[keyof conversationsEndConversationResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;
