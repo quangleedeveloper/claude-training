@@ -32,3 +32,22 @@ until then this folder holds the cases.
 - `note`: why the case may change (for example, a pending decision).
 
 - Cases are protected: while `.claude/tests-locked` exists, a hook blocks edits here.
+
+## Checking and running the cases
+- `cd backend && uv run python scripts/validate_evals.py` checks every case and fixture
+  without a model (ids, `from` is an AC in the spec, cited ids exist in the fixture,
+  invented people only, every case is in `qa/test-matrix.md`). CI runs it on every change
+  to `evals/`, `fixtures/`, `qa/` or the spec.
+- `cd backend && uv run python scripts/run_grounding_evals.py [--repeats 3] [--cases G-101,G-110]`
+  seeds the fixture into the configured database (use a throwaway one), drives each case
+  through the real conversation API with the real local model, and reports the pass rate,
+  the invented-memory count and whole-turn latency (p50/p90, informational). It removes
+  what it created. Exit code 1 means an invented memory or a pass rate below
+  `--min-pass-rate` (default 0.9, from `EVAL_MIN_PASS_RATE`).
+- An **invented memory** is a `must_not_include` hit, or a cited source that is not in the
+  case's fixture. `cites` and `not_cites` are checked against `done.sources` mapped back to
+  fixture ids.
+- With `--repeats 3` a case passes when no run invented anything and at least 2 of 3 runs
+  met every other check; mixed results are listed as flaky.
+- The CI job `run` needs a self-hosted runner labelled `ollama` and the repository variable
+  `GROUNDING_EVALS_RUN=true`; it only reports unless `GROUNDING_EVALS_GATE=enforce`.
