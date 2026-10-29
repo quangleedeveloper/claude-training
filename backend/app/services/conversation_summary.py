@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import text
+from sqlalchemy import text, update
 from sqlmodel import Session, col, delete, select
 from starlette.concurrency import run_in_threadpool
 
@@ -25,6 +25,8 @@ from app.models import (
     ConversationStatus,
     ConversationSummary,
     MessageRole,
+    Person,
+    PersonMember,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,6 +54,55 @@ def delete_person_summaries(session: Session, person_id: uuid.UUID) -> None:
     session.exec(
         delete(ConversationSummary).where(
             col(ConversationSummary.person_id) == person_id
+        )
+    )
+
+
+def may_talk_with(session: Session, person_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    """Whether the user is the person's owner or one of its members."""
+    owner_id = session.exec(
+        select(Person.owner_id).where(col(Person.id) == person_id)
+    ).first()
+    if owner_id is None:
+        return False
+    if owner_id == user_id:
+        return True
+    return (
+        session.exec(
+            select(PersonMember.id).where(
+                col(PersonMember.person_id) == person_id,
+                col(PersonMember.user_id) == user_id,
+            )
+        ).first()
+        is not None
+    )
+
+
+def end_member_conversations(
+    session: Session, person_id: uuid.UUID, user_id: uuid.UUID
+) -> None:
+    """End a member's open conversations with a person without a summary, and delete
+    their messages. No model call; the caller commits, together with whatever else
+    the revoke changes, so no half-revoked state can be left behind."""
+    # End first: the update takes the row locks a reply being saved also needs, so
+    # that reply waits, then sees an ended conversation and is dropped. Deleting the
+    # messages of every conversation of the pair afterwards leaves nothing behind.
+    session.exec(
+        update(Conversation)
+        .where(
+            col(Conversation.person_id) == person_id,
+            col(Conversation.user_id) == user_id,
+            col(Conversation.status) == ConversationStatus.OPEN,
+        )
+        .values(status=ConversationStatus.ENDED, ended_at=datetime.now(UTC))
+    )
+    pair_ids = select(Conversation.id).where(
+        col(Conversation.person_id) == person_id,
+        col(Conversation.user_id) == user_id,
+    )
+    session.exec(
+        delete(ConversationMessage).where(
+            col(ConversationMessage.conversation_id).in_(pair_ids)
         )
     )
 
@@ -126,6 +177,10 @@ def end_conversation(
     if only_if_quiet and locked.last_message_at != last_message_at:
         session.rollback()
         return False
+    if summary_text and not may_talk_with(session, person_id, user_id):
+        # Access was taken away after this conversation was opened (a revoke racing
+        # the open): a revoked member must not get a summary written
+        summary_text = None
     existing = get_summary(session, person_id, user_id)
     current = (existing.id, existing.updated_at) if existing else None
     if summary_text and current != based_on:

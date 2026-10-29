@@ -98,6 +98,15 @@ def stream_turn(
     first_token_ms: int | None = None
     parts: list[str] = []
     with Session(engine) as session:
+        # Revoking a member ends their conversations in the same commit, so an ended
+        # conversation here also covers access taken away since the request began
+        status = session.exec(
+            select(Conversation.status).where(col(Conversation.id) == conversation_id)
+        ).first()
+        session.rollback()
+        if status != ConversationStatus.OPEN:
+            yield server_event("error", {"detail": "Conversation has ended"})
+            return
         try:
             for event in persona_graph.reply(
                 session,
@@ -187,11 +196,21 @@ def send_message(
     """
     Send a message and stream the persona's reply as server-sent events.
     """
-    conversation = get_conversation_or_error(session, current_user, conversation_id)
+    get_conversation_or_error(session, current_user, conversation_id)
+    # Lock the row first: ending or revoking updates it, so from here until the commit
+    # no one can end the conversation between the checks below and the insert of the
+    # message (which would then outlive the conversation)
+    conversation = session.exec(
+        select(Conversation)
+        .where(col(Conversation.id) == conversation_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    ).one()
+    # Checked on every message, and before the "ended" check, so access taken away
+    # later answers 403 and not 409
+    person = get_person_for_conversation(session, current_user, conversation.person_id)
     if conversation.status != ConversationStatus.OPEN:
         raise HTTPException(status_code=409, detail="Conversation has ended")
-    # Checked on every message so access taken away later stops a running chat
-    person = get_person_for_conversation(session, current_user, conversation.person_id)
     history = list(
         session.exec(
             select(ConversationMessage)
