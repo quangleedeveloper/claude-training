@@ -107,6 +107,10 @@ class Settings(BaseSettings):
     PERSONA_STYLE_EXAMPLES: int = 5
     # Earlier messages of the open conversation sent along with a new one
     PERSONA_HISTORY_TURNS: int = 6
+    # A conversation nobody has written in for this long is ended and summarized
+    CONVERSATION_IDLE_MINUTES: int = 30
+    # How often the app looks for idle conversations; 0 turns the check off
+    CONVERSATION_SWEEP_SECONDS: int = 60
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
