@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import text
+from sqlalchemy import text, update
 from sqlmodel import Session, col, delete, select
 from starlette.concurrency import run_in_threadpool
 
@@ -53,6 +53,33 @@ def delete_person_summaries(session: Session, person_id: uuid.UUID) -> None:
         delete(ConversationSummary).where(
             col(ConversationSummary.person_id) == person_id
         )
+    )
+
+
+def end_member_conversations(
+    session: Session, person_id: uuid.UUID, user_id: uuid.UUID
+) -> None:
+    """End a member's open conversations with a person without a summary, and delete
+    their messages. No model call; the caller commits, together with whatever else
+    the revoke changes, so no half-revoked state can be left behind."""
+    open_ids = select(Conversation.id).where(
+        col(Conversation.person_id) == person_id,
+        col(Conversation.user_id) == user_id,
+        col(Conversation.status) == ConversationStatus.OPEN,
+    )
+    session.exec(
+        delete(ConversationMessage).where(
+            col(ConversationMessage.conversation_id).in_(open_ids)
+        )
+    )
+    session.exec(
+        update(Conversation)
+        .where(
+            col(Conversation.person_id) == person_id,
+            col(Conversation.user_id) == user_id,
+            col(Conversation.status) == ConversationStatus.OPEN,
+        )
+        .values(status=ConversationStatus.ENDED, ended_at=datetime.now(UTC))
     )
 
 

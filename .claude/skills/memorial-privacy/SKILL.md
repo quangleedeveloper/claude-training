@@ -14,6 +14,12 @@ Treat every byte as private to the family that uploaded it.
 2. **Owner scoping on every read and write.** A user sees only their own memories,
    files and extracted items; superusers are the only exception, and only where the
    route says so. Every new endpoint gets a 403 test with a second normal user.
+   One narrow exception: a *member* the owner invited to a person (`PersonMember`)
+   can talk with that person's persona and sees the replies and the sources they
+   cite (item text and memory title), nothing else. Memory, file, extracted-item and
+   person endpoints stay owner-only for members, and superusers get no access to
+   anyone's conversations or summaries. All persona access goes through
+   `get_person_for_conversation`; never widen it elsewhere.
 3. **No memory content in logs or errors.** Log IDs and counts, never story text,
    transcripts, extracted content, names from memories or file paths of uploads.
    `HTTPException` details stay generic; tests assert on them.
