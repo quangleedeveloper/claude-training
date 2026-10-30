@@ -44,13 +44,30 @@ test.describe("Memories management", () => {
 
     await page.getByRole("button", { name: "Add Memory" }).click()
     await page.getByRole("textbox", { name: "Title" }).fill(title)
-    await page.getByRole("textbox", { name: "Person" }).fill("Grandpa Tom")
     await page.getByRole("textbox", { name: "Memory *" }).fill(content)
     await page.getByRole("button", { name: "Save" }).click()
 
     await expect(page.getByText("Memory created successfully")).toBeVisible()
     await expect(page.getByText(title)).toBeVisible()
     await expect(page.getByText(content)).toBeVisible()
+  })
+
+  test("The memory form has no person field and the table says Not linked", async ({
+    page,
+  }) => {
+    const title = randomMemoryTitle()
+
+    await page.getByRole("button", { name: "Add Memory" }).click()
+    await expect(page.getByRole("textbox", { name: "Person" })).toHaveCount(0)
+    await page.getByRole("textbox", { name: "Title" }).fill(title)
+    await page
+      .getByRole("textbox", { name: "Memory *" })
+      .fill(randomMemoryContent())
+    await page.getByRole("button", { name: "Save" }).click()
+    await expect(page.getByText("Memory created successfully")).toBeVisible()
+
+    const row = page.getByRole("row").filter({ hasText: title })
+    await expect(row).toContainText("Not linked")
   })
 
   test("Cancel memory creation", async ({ page }) => {
@@ -77,7 +94,6 @@ test.describe("Memories management", () => {
 
       await page.getByRole("button", { name: "Add Memory" }).click()
       await page.getByRole("textbox", { name: "Title" }).fill(memoryTitle)
-      await page.getByRole("textbox", { name: "Person" }).fill("Grandma Rose")
       await page
         .getByRole("textbox", { name: "Memory *" })
         .fill(randomMemoryContent())

@@ -33,7 +33,6 @@ import { handleError } from "@/utils"
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
-  person_name: z.string().min(1, { message: "Person name is required" }),
   content: z
     .string()
     .min(1, { message: "Memory is required" })
@@ -58,7 +57,6 @@ const EditMemory = ({ memory, onSuccess }: EditMemoryProps) => {
     criteriaMode: "all",
     defaultValues: {
       title: memory.title,
-      person_name: memory.person_name,
       content: memory.content,
     },
   })
@@ -110,26 +108,6 @@ const EditMemory = ({ memory, onSuccess }: EditMemoryProps) => {
                     </FormLabel>
                     <FormControl>
                       <Input placeholder="Title" type="text" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="person_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Person <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Who is this memory about?"
-                        type="text"
-                        {...field}
-                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

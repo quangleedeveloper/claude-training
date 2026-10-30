@@ -227,8 +227,8 @@ def test_link_memory_to_person(
     )
     assert response.status_code == 200
     assert response.json()["person_id"] == str(person.id)
-    # Linking leaves the free-text name alone
-    assert response.json()["person_name"] == memory.person_name
+    # The name follows the link, so the AI reads the story as being about them
+    assert response.json()["person_name"] == person.name
 
     response = client.put(
         url, headers=normal_user_token_headers, json={"person_id": None}

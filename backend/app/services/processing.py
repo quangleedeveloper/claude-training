@@ -31,6 +31,8 @@ from app.services.transcription import Transcriber, get_transcriber
 logger = logging.getLogger(__name__)
 
 GENERIC_FAILURE = "Processing failed. Check the server logs for details."
+# A memory not yet linked to a person has no name to give the extraction prompt
+DEFAULT_PERSON_NAME = "the person"
 
 __all__ = [
     "MediaProcessor",
@@ -81,7 +83,7 @@ def process_memory_file(
         session.add(memory_file)
         session.commit()
         initial: ExtractionState = {
-            "person_name": memory.person_name,
+            "person_name": memory.person_name or DEFAULT_PERSON_NAME,
             "path": str(storage.path(memory_file.storage_key)),
             "kind": memory_file.kind,
         }
@@ -141,7 +143,7 @@ def extract_memory_story(memory_id: uuid.UUID, llm: LLMClient) -> None:
         if memory is None:
             return
         initial: ExtractionState = {
-            "person_name": memory.person_name,
+            "person_name": memory.person_name or DEFAULT_PERSON_NAME,
             "text": memory.content,
         }
     try:

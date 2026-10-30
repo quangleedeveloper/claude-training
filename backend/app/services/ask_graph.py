@@ -34,7 +34,9 @@ def format_context(hits: list[SearchHit]) -> str:
     lines: list[str] = []
     for number, hit in enumerate(hits, start=1):
         item = hit.item
-        details = [f"about {hit.person_name}", f"story: {hit.memory_title}"]
+        details = [f"story: {hit.memory_title}"]
+        if hit.person_name:
+            details.insert(0, f"about {hit.person_name}")
         if item.event_date_text:
             details.append(f"when: {item.event_date_text}")
         if item.location:

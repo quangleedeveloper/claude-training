@@ -182,6 +182,22 @@ def test_format_context_lists_the_details(
     assert "people: Mum, Dad" in text
 
 
+def test_format_context_leaves_out_a_missing_person_name(
+    db: Session, llm_client: FakeLLMClient
+) -> None:
+    memory = create_random_memory(db)
+    memory.person_name = ""
+    db.add(memory)
+    create_random_extracted_memory(db, memory, content="Wedding by the sea")
+    db.commit()
+
+    hits = search_extracted(db, owner_of(db, memory), llm_client, "wedding")
+    text = format_context(hits)
+
+    assert "about" not in text
+    assert f"story: {memory.title}" in text
+
+
 def persona_memory(db: Session) -> tuple[Person, Memory]:
     """A person and one of their owner's memories, linked to them."""
     person = create_random_person(db)
