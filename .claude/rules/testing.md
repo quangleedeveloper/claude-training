@@ -29,5 +29,5 @@
 ## Before opening a PR
 1. `uv run prek run --all-files` (lint, format, mypy, ty, typos, client regeneration)
 2. `cd backend && uv run bash scripts/test.sh`
-3. If UI changed: `bun run test`
+3. If UI changed: `bun run test`, then capture screenshots with `PR_SCREENSHOTS=1 bunx playwright test <spec>` and attach them to the PR (see `workflow.md`)
 4. Full stack in Docker: `bash scripts/test.sh`

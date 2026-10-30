@@ -30,6 +30,12 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+
+    /* PR evidence: PR_SCREENSHOTS=1 keeps a full-page screenshot of every test in
+       test-results/ (CI sets it on pull requests); otherwise only failures. */
+    screenshot: process.env.PR_SCREENSHOTS
+      ? { mode: 'on', fullPage: true }
+      : 'only-on-failure',
   },
 
   /* Configure projects for major browsers */

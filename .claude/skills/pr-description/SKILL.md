@@ -20,3 +20,13 @@ Brief context on why this change is needed
 - Bullet points of specific changes made
 - Group related changes together
 - Mention any files deleted or renamed
+
+## How it was tested
+- The commands that were run and what passed. Say plainly what could not be run.
+
+## Screenshots
+- If `git diff main...HEAD --stat` touches `frontend/src/`, the description needs screenshots of the screens changed: the main state, an empty or error state, and before/after for a changed screen. You cannot upload images yourself, so list each screen that needs one and say where to get it (`PR_SCREENSHOTS=1 bunx playwright test <spec>` writes full-page PNG files to `frontend/test-results/`; the PR's Playwright run also uploads `pr-screenshots-*` artifacts). Never use real family data.
+- Otherwise write "No UI change".
+
+## Migrations and env vars
+- A new Alembic migration, new `Settings` or `.env.example` entries, or "None".
