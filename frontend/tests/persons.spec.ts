@@ -141,7 +141,7 @@ test.describe("People management", () => {
       await page.getByRole("button", { name: "Add Memory" }).click()
       await page.getByRole("textbox", { name: "Title" }).fill(memoryTitle)
       await page
-        .getByRole("textbox", { name: "Memory *" })
+        .getByRole("textbox", { name: "Memory", exact: true })
         .fill(randomMemoryContent())
       await page.getByRole("button", { name: "Save" }).click()
       await expect(page.getByText("Memory created successfully")).toBeVisible()

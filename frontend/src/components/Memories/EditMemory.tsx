@@ -27,9 +27,9 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
-import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
+import MemoryEditor from "./MemoryEditor"
 import PersonSelect, { NO_PERSON } from "./PersonSelect"
 
 const formSchema = z.object({
@@ -161,14 +161,19 @@ const EditMemory = ({ memory, onSuccess }: EditMemoryProps) => {
               <FormField
                 control={form.control}
                 name="content"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>
                       Memory <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Tell the story" {...field} />
-                    </FormControl>
+                    <MemoryEditor
+                      label="Memory"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      disabled={mutation.isPending}
+                      invalid={fieldState.invalid}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
