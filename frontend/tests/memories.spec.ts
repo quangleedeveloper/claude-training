@@ -1,10 +1,13 @@
-import { expect, test } from "@playwright/test"
+import { expect, type Page, test } from "@playwright/test"
+import { LoginService, PersonsService } from "../src/client"
+import { createClient, createConfig } from "../src/client/client"
 import { createUser } from "./utils/privateApi"
 import {
   randomEmail,
   randomMemoryContent,
   randomMemoryTitle,
   randomPassword,
+  randomPersonName,
 } from "./utils/random"
 import { logInUser } from "./utils/user"
 
@@ -52,21 +55,97 @@ test.describe("Memories management", () => {
     await expect(page.getByText(content)).toBeVisible()
   })
 
-  test("The memory form has no person field and the table says Not linked", async ({
-    page,
-  }) => {
-    const title = randomMemoryTitle()
+  const createPerson = async (name: string) => {
+    const baseURL = `${process.env.VITE_API_URL}`
+    const login = await LoginService.loginAccessToken({
+      client: createClient(createConfig({ baseURL })),
+      body: { username: email, password },
+    })
+    await PersonsService.createPerson({
+      client: createClient(
+        createConfig({ baseURL, auth: () => login.data.access_token }),
+      ),
+      body: { name, other_names: [] },
+    })
+  }
 
-    await page.getByRole("button", { name: "Add Memory" }).click()
-    await expect(page.getByRole("textbox", { name: "Person" })).toHaveCount(0)
+  const fillMemory = async (page: Page, title: string) => {
     await page.getByRole("textbox", { name: "Title" }).fill(title)
     await page
       .getByRole("textbox", { name: "Memory *" })
       .fill(randomMemoryContent())
+  }
+
+  test("Without a person the table says Not linked", async ({ page }) => {
+    const title = randomMemoryTitle()
+
+    await page.getByRole("button", { name: "Add Memory" }).click()
+    await expect(page.getByRole("combobox", { name: "Person" })).toHaveText(
+      "No person",
+    )
+    await fillMemory(page, title)
     await page.getByRole("button", { name: "Save" }).click()
     await expect(page.getByText("Memory created successfully")).toBeVisible()
 
     const row = page.getByRole("row").filter({ hasText: title })
+    await expect(row).toContainText("Not linked")
+  })
+
+  test("Add Memory lists the people and links the chosen one", async ({
+    page,
+  }) => {
+    const personName = randomPersonName()
+    const title = randomMemoryTitle()
+    await createPerson(personName)
+    await page.reload()
+
+    await page.getByRole("button", { name: "Add Memory" }).click()
+    await page.getByRole("combobox", { name: "Person" }).click()
+    await page.getByRole("option", { name: personName }).click()
+    await fillMemory(page, title)
+    await page.getByRole("button", { name: "Save" }).click()
+    await expect(page.getByText("Memory created successfully")).toBeVisible()
+
+    const row = page.getByRole("row").filter({ hasText: title })
+    await expect(row).toContainText(personName)
+  })
+
+  test("Edit Memory shows the current person and can change or clear it", async ({
+    page,
+  }) => {
+    const personName = randomPersonName()
+    const title = randomMemoryTitle()
+    await createPerson(personName)
+    await page.reload()
+
+    await page.getByRole("button", { name: "Add Memory" }).click()
+    await fillMemory(page, title)
+    await page.getByRole("button", { name: "Save" }).click()
+    await expect(page.getByText("Memory created successfully")).toBeVisible()
+
+    const row = page.getByRole("row").filter({ hasText: title })
+    const edit = async () => {
+      await row.getByRole("button").last().click()
+      await page.getByRole("menuitem", { name: "Edit Memory" }).click()
+    }
+
+    await edit()
+    await expect(page.getByRole("combobox", { name: "Person" })).toHaveText(
+      "No person",
+    )
+    await page.getByRole("combobox", { name: "Person" }).click()
+    await page.getByRole("option", { name: personName }).click()
+    await page.getByRole("button", { name: "Save" }).click()
+    await expect(page.getByText("Memory updated successfully")).toBeVisible()
+    await expect(row).toContainText(personName)
+
+    await edit()
+    await expect(page.getByRole("combobox", { name: "Person" })).toHaveText(
+      personName,
+    )
+    await page.getByRole("combobox", { name: "Person" }).click()
+    await page.getByRole("option", { name: "No person" }).click()
+    await page.getByRole("button", { name: "Save" }).click()
     await expect(row).toContainText("Not linked")
   })
 

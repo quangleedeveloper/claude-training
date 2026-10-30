@@ -25,9 +25,7 @@ import {
 } from "@/components/ui/select"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
-
-// Select has no empty value, so "no person" gets a sentinel
-const NO_PERSON = "none"
+import { NO_PERSON } from "./PersonSelect"
 
 interface LinkPersonProps {
   memory: MemoryPublic

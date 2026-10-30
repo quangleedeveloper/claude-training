@@ -30,8 +30,10 @@ import { LoadingButton } from "@/components/ui/loading-button"
 import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
+import PersonSelect, { NO_PERSON } from "./PersonSelect"
 
 const formSchema = z.object({
+  person_id: z.string(),
   title: z.string().min(1, { message: "Title is required" }),
   content: z
     .string()
@@ -56,16 +58,39 @@ const EditMemory = ({ memory, onSuccess }: EditMemoryProps) => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
+      person_id: memory.person_id ?? NO_PERSON,
       title: memory.title,
       content: memory.content,
     },
   })
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      MemoriesService.updateMemory({ path: { id: memory.id }, body: data }),
-    onSuccess: () => {
+    mutationFn: async ({ person_id, ...changes }: FormData) => {
+      await MemoriesService.updateMemory({
+        path: { id: memory.id },
+        body: changes,
+      })
+      // Linked after the edit, so the story is saved even if linking fails
+      if (person_id === (memory.person_id ?? NO_PERSON)) {
+        return { linkError: null }
+      }
+      try {
+        await MemoriesService.linkMemoryPerson({
+          path: { id: memory.id },
+          body: { person_id: person_id === NO_PERSON ? null : person_id },
+        })
+        return { linkError: null }
+      } catch (error) {
+        return { linkError: error }
+      }
+    },
+    onSuccess: ({ linkError }) => {
       showSuccessToast("Memory updated successfully")
+      if (linkError) {
+        showErrorToast(
+          "Memory saved, but the person could not be changed. Use Link Person.",
+        )
+      }
       setIsOpen(false)
       onSuccess()
     },
@@ -109,6 +134,25 @@ const EditMemory = ({ memory, onSuccess }: EditMemoryProps) => {
                     <FormControl>
                       <Input placeholder="Title" type="text" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="person_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor={`edit-memory-person-${memory.id}`}>
+                      Person
+                    </FormLabel>
+                    <PersonSelect
+                      id={`edit-memory-person-${memory.id}`}
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={mutation.isPending}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
