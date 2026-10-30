@@ -159,6 +159,9 @@ test.describe("Chat window", () => {
     await expect(log(page)).toContainText(
       "This reply is not backed by a memory.",
     )
+    // The memory the model was shown is not listed under a reply that cites none
+    await expect(page.getByRole("list", { name: "Sources" })).toHaveCount(0)
+    await expect(log(page)).not.toContainText("He fished at dawn.")
   })
 
   test("Errors keep the typed text", async ({ page }) => {
