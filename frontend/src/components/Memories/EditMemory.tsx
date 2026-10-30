@@ -113,7 +113,7 @@ const EditMemory = ({ memory, onSuccess }: EditMemoryProps) => {
         <Pencil />
         Edit Memory
       </DropdownMenuItem>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-3xl">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
