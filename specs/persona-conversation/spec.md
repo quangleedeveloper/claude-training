@@ -65,6 +65,7 @@ average of 4 or more out of 5 on both, and zero invented memories.
 - **AC-1.4** Given a superuser who is not the owner, when they read, change or delete a person or link a memory to it, then they get 403. *(MR-101 DEV-2)*
 - **AC-1.5** Given the owner opens a person's "Memories" in the People menu, then they see the titles of the memories linked to that person (and only those), a count, or an empty state; another user's person id returns nothing. *(MR-115)*
 - **AC-1.6** Given the Add or Edit Memory form, then there is no typed person field; a memory is tied to a person only by linking, which sets the memory's person name to that person's name, and the Memories table shows the linked person's name or "Not linked". *(MR-116)*
+- **AC-1.7** Given the Add or Edit Memory form, then a Person select lists the owner's people with "No person" first (Edit starts on the current person), and saving links the chosen person; if linking fails the memory is still saved and the user is told. *(MR-117)*
 
 **FR-2 Confirm step**
 - **AC-2.1** Given an unconfirmed item on the owner's memory, when the owner confirms it, then `confirmed_at` is set and the item is returned as confirmed.

@@ -36,8 +36,10 @@ import useCustomToast from "@/hooks/useCustomToast"
 import { MAX_FILES_PER_UPLOAD, partitionMediaFiles } from "@/lib/mediaLimits"
 import { handleError } from "@/utils"
 import FileDropzone from "./FileDropzone"
+import PersonSelect, { NO_PERSON } from "./PersonSelect"
 
 const formSchema = z.object({
+  person_id: z.string(),
   title: z.string().min(1, { message: "Title is required" }),
   content: z
     .string()
@@ -62,6 +64,7 @@ const AddMemory = () => {
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
+      person_id: NO_PERSON,
       title: "",
       content: "",
     },
@@ -76,15 +79,29 @@ const AddMemory = () => {
   const mutation = useMutation({
     mutationFn: async ({
       memory,
+      personId,
       files,
     }: {
       memory: MemoryCreate
+      personId: string
       files: File[]
     }) => {
       const { data: created } = await MemoriesService.createMemory({
         body: memory,
       })
-      if (files.length === 0) return { uploadError: null }
+      // The memory already exists, so a failed link must not fail the whole save
+      let linkError: unknown = null
+      if (personId !== NO_PERSON) {
+        try {
+          await MemoriesService.linkMemoryPerson({
+            path: { id: created.id },
+            body: { person_id: personId },
+          })
+        } catch (error) {
+          linkError = error
+        }
+      }
+      if (files.length === 0) return { uploadError: null, linkError }
       // The memory already exists at this point, so a failed upload must not
       // fail the whole save; the user can retry from Manage Files.
       try {
@@ -92,13 +109,18 @@ const AddMemory = () => {
           path: { memory_id: created.id },
           body: { files },
         })
-        return { uploadError: null }
+        return { uploadError: null, linkError }
       } catch (error) {
-        return { uploadError: error }
+        return { uploadError: error, linkError }
       }
     },
-    onSuccess: ({ uploadError }) => {
+    onSuccess: ({ uploadError, linkError }) => {
       showSuccessToast("Memory created successfully")
+      if (linkError) {
+        showErrorToast(
+          "Memory saved, but it could not be linked to the person. Use Link Person.",
+        )
+      }
       if (uploadError) {
         showErrorToast(
           "Memory saved, but its files failed to upload. Add them from Manage Files.",
@@ -120,8 +142,8 @@ const AddMemory = () => {
     setRejected(invalid)
   }
 
-  const onSubmit = (data: FormData) => {
-    mutation.mutate({ memory: data, files: selected })
+  const onSubmit = ({ person_id, ...memory }: FormData) => {
+    mutation.mutate({ memory, personId: person_id, files: selected })
   }
 
   const onOpenChange = (open: boolean) => {
@@ -163,6 +185,23 @@ const AddMemory = () => {
                         required
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="person_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="add-memory-person">Person</FormLabel>
+                    <PersonSelect
+                      id="add-memory-person"
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={mutation.isPending}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
