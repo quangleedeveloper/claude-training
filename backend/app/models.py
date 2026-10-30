@@ -286,7 +286,8 @@ class OffersPublic(SQLModel):
 # Shared properties
 class MemoryBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
-    person_name: str = Field(min_length=1, max_length=255)
+    # Empty until the memory is linked to a person, which fills in their name
+    person_name: str = Field(default="", max_length=255)
     content: str = Field(min_length=1, max_length=5000)
 
 

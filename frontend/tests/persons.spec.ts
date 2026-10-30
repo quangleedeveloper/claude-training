@@ -140,7 +140,6 @@ test.describe("People management", () => {
       await page.goto("/memories")
       await page.getByRole("button", { name: "Add Memory" }).click()
       await page.getByRole("textbox", { name: "Title" }).fill(memoryTitle)
-      await page.getByRole("textbox", { name: "Person" }).fill("Grandma Rose")
       await page
         .getByRole("textbox", { name: "Memory *" })
         .fill(randomMemoryContent())
@@ -159,6 +158,10 @@ test.describe("People management", () => {
       await expect(page.getByText("Memory linked to person")).toBeVisible()
       await expect(page.getByRole("dialog")).not.toBeVisible()
 
+      // The table names the linked person, not a typed label
+      const row = page.getByRole("row").filter({ hasText: memoryTitle })
+      await expect(row).toContainText(personName)
+
       // Linking is saved: the dialog shows the person after a reload
       await page.reload()
       await openLinkDialog(page)
@@ -170,6 +173,9 @@ test.describe("People management", () => {
 
       await expect(page.getByText("Memory unlinked from person")).toBeVisible()
       await expect(page.getByRole("dialog")).not.toBeVisible()
+      await expect(
+        page.getByRole("row").filter({ hasText: memoryTitle }),
+      ).toContainText("Not linked")
     })
 
     test("Deleting a person keeps its memories, unlinked", async ({ page }) => {

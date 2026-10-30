@@ -42,7 +42,6 @@ test.describe("Memory files", () => {
 
     await page.getByRole("button", { name: "Add Memory" }).click()
     await page.getByRole("textbox", { name: "Title" }).fill(memoryTitle)
-    await page.getByRole("textbox", { name: "Person" }).fill("Grandpa Tom")
     await page
       .getByRole("textbox", { name: "Memory *" })
       .fill(randomMemoryContent())

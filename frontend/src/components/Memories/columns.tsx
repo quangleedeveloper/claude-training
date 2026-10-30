@@ -3,6 +3,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import type { MemoryPublic } from "@/client"
 import type { DataTableFeatures } from "@/components/Common/DataTable"
 import { MemoryActionsMenu } from "./MemoryActionsMenu"
+import PersonCell from "./PersonCell"
 
 export const columns: ColumnDef<DataTableFeatures, MemoryPublic>[] = [
   {
@@ -13,9 +14,9 @@ export const columns: ColumnDef<DataTableFeatures, MemoryPublic>[] = [
     ),
   },
   {
-    accessorKey: "person_name",
+    accessorKey: "person_id",
     header: "Person",
-    cell: ({ row }) => <span>{row.original.person_name}</span>,
+    cell: ({ row }) => <PersonCell personId={row.original.person_id} />,
   },
   {
     accessorKey: "content",

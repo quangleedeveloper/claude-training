@@ -366,7 +366,7 @@ export type MemoryCreate = {
     /**
      * Person Name
      */
-    person_name: string;
+    person_name?: string;
     /**
      * Content
      */
@@ -481,7 +481,7 @@ export type MemoryPublic = {
     /**
      * Person Name
      */
-    person_name: string;
+    person_name?: string;
     /**
      * Content
      */

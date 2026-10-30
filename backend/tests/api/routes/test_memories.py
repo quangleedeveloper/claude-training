@@ -250,3 +250,51 @@ def test_read_memories_filter_rejects_a_bad_person_id(
         params={"person_id": "not-a-uuid"},
     )
     assert response.status_code == 422
+
+
+def test_create_memory_without_person_name(
+    client: TestClient, normal_user_token_headers: dict[str, str]
+) -> None:
+    data = {"title": "Fishing trips", "content": "He woke us up before dawn."}
+    response = client.post(
+        f"{settings.API_V1_STR}/memories/",
+        headers=normal_user_token_headers,
+        json=data,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["person_name"] == ""
+    assert content["person_id"] is None
+
+
+def test_link_memory_person_fills_in_the_person_name(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    user = crud.get_user_by_email(session=db, email=settings.EMAIL_TEST_USER)
+    assert user is not None
+    person = create_random_person(db, owner=user)
+    created = client.post(
+        f"{settings.API_V1_STR}/memories/",
+        headers=normal_user_token_headers,
+        json={"title": "Fishing trips", "content": "He woke us up."},
+    ).json()
+    response = client.put(
+        f"{settings.API_V1_STR}/memories/{created['id']}/person",
+        headers=normal_user_token_headers,
+        json={"person_id": str(person.id)},
+    )
+    assert response.status_code == 200
+    assert response.json()["person_id"] == str(person.id)
+    assert response.json()["person_name"] == person.name
+
+
+def test_update_memory_still_refuses_a_blank_person_name(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    memory = create_random_memory(db)
+    response = client.put(
+        f"{settings.API_V1_STR}/memories/{memory.id}",
+        headers=superuser_token_headers,
+        json={"person_name": ""},
+    )
+    assert response.status_code == 422

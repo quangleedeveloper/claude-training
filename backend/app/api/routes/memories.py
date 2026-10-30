@@ -170,7 +170,9 @@ def link_memory_person(
     if memory.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     if link_in.person_id is not None:
-        get_person_or_error(session, current_user, link_in.person_id)
+        person = get_person_or_error(session, current_user, link_in.person_id)
+        # The AI reads stories "about <name>", so the name follows the link
+        memory.person_name = person.name
     memory.person_id = link_in.person_id
     session.add(memory)
     session.commit()
