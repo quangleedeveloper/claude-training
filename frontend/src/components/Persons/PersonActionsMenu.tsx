@@ -3,6 +3,7 @@ import { EllipsisVertical, MessageCircle } from "lucide-react"
 import { useState } from "react"
 
 import type { PersonPublic } from "@/client"
+import OffersList from "@/components/Offers/OffersList"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -35,6 +36,7 @@ export const PersonActionsMenu = ({ person }: PersonActionsMenuProps) => {
             Talk
           </Link>
         </DropdownMenuItem>
+        <OffersList personId={person.id} personName={person.name} />
         <EditPerson person={person} onSuccess={() => setOpen(false)} />
         <DeletePerson id={person.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>

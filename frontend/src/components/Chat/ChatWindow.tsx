@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { ConversationsService, PersonsService } from "@/client"
+import OfferMemory from "@/components/Offers/OfferMemory"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Form,
@@ -241,13 +242,18 @@ const ChatWindow = ({ personId }: ChatWindowProps) => {
             Ask about what the family remembers
           </p>
         </div>
-        {blocked !== "ended" && blocked !== "notFound" && (
-          <EndChat
-            conversationId={conversation.conversationId}
-            disabled={sending || stopped}
-            onEnded={() => navigate({ to: "/persons" })}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          {blocked !== "denied" && blocked !== "notFound" && (
+            <OfferMemory personId={personId} />
+          )}
+          {blocked !== "ended" && blocked !== "notFound" && (
+            <EndChat
+              conversationId={conversation.conversationId}
+              disabled={sending || stopped}
+              onEnded={() => navigate({ to: "/persons" })}
+            />
+          )}
+        </div>
       </div>
 
       <div
