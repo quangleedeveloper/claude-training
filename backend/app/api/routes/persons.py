@@ -26,6 +26,8 @@ from app.models import (
     PersonPublic,
     PersonsPublic,
     PersonUpdate,
+    SharedPersonPublic,
+    SharedPersonsPublic,
     User,
 )
 from app.services.conversation_summary import end_member_conversations
@@ -93,6 +95,22 @@ def read_persons(
     ).all()
     persons_public = [PersonPublic.model_validate(person) for person in persons]
     return PersonsPublic(data=persons_public, count=count)
+
+
+# Declared before `/{id}` so "shared" is not parsed as an id
+@router.get("/shared", response_model=SharedPersonsPublic)
+def read_shared_persons(session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    List the persons whose owners invited the caller to talk with their persona.
+    """
+    persons = session.exec(
+        select(Person)
+        .join(PersonMember, col(PersonMember.person_id) == col(Person.id))
+        .where(col(PersonMember.user_id) == current_user.id)
+        .order_by(col(Person.name), col(Person.id))
+    ).all()
+    shared = [SharedPersonPublic(id=person.id, name=person.name) for person in persons]
+    return SharedPersonsPublic(data=shared, count=len(shared))
 
 
 @router.get("/{id}", response_model=PersonPublic)
