@@ -159,7 +159,7 @@ const AddMemory = () => {
           Add Memory
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Add Memory</DialogTitle>
           <DialogDescription>
