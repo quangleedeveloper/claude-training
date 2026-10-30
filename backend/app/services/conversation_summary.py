@@ -18,7 +18,7 @@ from starlette.concurrency import run_in_threadpool
 from app.core.config import settings
 from app.core.db import engine
 from app.core.llm import LLMClient, LLMError, get_llm_client
-from app.core.prompt import PERSONA_NOTICE, SUMMARY_SYSTEM_PROMPT, SUMMARY_USER_PROMPT
+from app.core.prompt import SUMMARY_SYSTEM_PROMPT, SUMMARY_USER_PROMPT
 from app.models import (
     Conversation,
     ConversationMessage,
@@ -108,13 +108,23 @@ def end_member_conversations(
 
 
 def format_transcript(messages: Sequence[ConversationMessage]) -> str:
-    """The turns for the summary prompt, without the app's opening notice."""
-    lines = [
-        f"{'Family member' if m.role == MessageRole.USER else 'AI'}: {m.content}"
-        for m in messages
-        if not (m.role == MessageRole.PERSONA and m.content == PERSONA_NOTICE)
-    ]
-    return "\n".join(lines)
+    """The family member's own messages for the summary prompt, one per line. The AI's
+    replies stay out: the note is about what the member said, and a model that sees
+    the replies starts writing about the AI and the remembered person instead."""
+    return "\n".join(
+        f"Family member: {' '.join(message.content.split())}"
+        for message in messages
+        if message.role == MessageRole.USER
+    )
+
+
+def continues_the_dialogue(note: str) -> bool:
+    """Whether the model wrote more turns instead of a note. That is made-up
+    conversation, and keeping it would put words in the member's mouth."""
+    return any(
+        line.strip().lower().startswith(("family member:", "ai:"))
+        for line in note.splitlines()
+    )
 
 
 def end_conversation(
@@ -160,7 +170,13 @@ def end_conversation(
         session.rollback()
         try:
             summary_text = llm.answer(SUMMARY_SYSTEM_PROMPT, prompt).strip()
-            summary_text = summary_text[:SUMMARY_MAX_CHARS] or None
+            if continues_the_dialogue(summary_text):
+                logger.warning(
+                    "summary dropped, it continued the dialogue: conversation=%s",
+                    conversation_id,
+                )
+                summary_text = None
+            summary_text = (summary_text or "")[:SUMMARY_MAX_CHARS] or None
         except LLMError:
             logger.warning("summary not written: conversation=%s", conversation_id)
 
