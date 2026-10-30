@@ -763,6 +763,34 @@ export type SendMessageRequest = {
 };
 
 /**
+ * SharedPersonPublic
+ */
+export type SharedPersonPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * SharedPersonsPublic
+ */
+export type SharedPersonsPublic = {
+    /**
+     * Data
+     */
+    data: Array<SharedPersonPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * SummaryPublic
  */
 export type SummaryPublic = {
@@ -2078,6 +2106,22 @@ export type personsCreatePersonResponses = {
 };
 
 export type personsCreatePersonResponse = personsCreatePersonResponses[keyof personsCreatePersonResponses];
+
+export type personsReadSharedPersonsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/persons/shared';
+};
+
+export type personsReadSharedPersonsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SharedPersonsPublic;
+};
+
+export type personsReadSharedPersonsResponse = personsReadSharedPersonsResponses[keyof personsReadSharedPersonsResponses];
 
 export type personsDeletePersonData = {
     body?: never;

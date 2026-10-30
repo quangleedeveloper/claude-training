@@ -230,6 +230,18 @@ class MembersPublic(SQLModel):
     count: int
 
 
+# What a member may know about a person they belong to: the name, never the owner or
+# the person record (memorial-privacy rule 2)
+class SharedPersonPublic(SQLModel):
+    id: uuid.UUID
+    name: str
+
+
+class SharedPersonsPublic(SQLModel):
+    data: list[SharedPersonPublic]
+    count: int
+
+
 # A memory someone offered from a conversation, waiting for the owner. It is plain text
 # and nothing else: it becomes a memory only when the owner accepts it (and its items
 # then start unconfirmed), so nothing said in a chat reaches the persona unreviewed.
