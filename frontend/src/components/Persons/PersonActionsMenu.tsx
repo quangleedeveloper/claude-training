@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import DeletePerson from "./DeletePerson"
 import EditPerson from "./EditPerson"
+import PersonMemories from "./PersonMemories"
 
 interface PersonActionsMenuProps {
   person: PersonPublic
@@ -37,6 +38,7 @@ export const PersonActionsMenu = ({ person }: PersonActionsMenuProps) => {
             Talk
           </Link>
         </DropdownMenuItem>
+        <PersonMemories personId={person.id} personName={person.name} />
         <OffersList personId={person.id} personName={person.name} />
         <ShareDialog personId={person.id} personName={person.name} />
         <EditPerson person={person} onSuccess={() => setOpen(false)} />

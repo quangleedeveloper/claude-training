@@ -368,7 +368,7 @@ export class MemoriesService {
     /**
      * Read Memories
      *
-     * Retrieve memories.
+     * Retrieve memories, optionally only those linked to one person.
      */
     public static readMemories<ThrowOnError extends boolean = true>(options?: Options<memoriesReadMemoriesData, ThrowOnError>) {
         return (options?.client ?? client).get<memoriesReadMemoriesResponses, memoriesReadMemoriesErrors, ThrowOnError>({

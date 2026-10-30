@@ -63,6 +63,7 @@ average of 4 or more out of 5 on both, and zero invented memories.
 - **AC-1.2** Given an owner's memory and person, when they link the memory, then the memory's `person_id` is set; linking another user's memory or to another user's person returns 403.
 - **AC-1.3** Given a person with linked memories, when the owner deletes the person, then the memories stay (unlinked) and the person's conversations, summaries, members, offers and audit rows are gone.
 - **AC-1.4** Given a superuser who is not the owner, when they read, change or delete a person or link a memory to it, then they get 403. *(MR-101 DEV-2)*
+- **AC-1.5** Given the owner opens a person's "Memories" in the People menu, then they see the titles of the memories linked to that person (and only those), a count, or an empty state; another user's person id returns nothing. *(MR-115)*
 
 **FR-2 Confirm step**
 - **AC-2.1** Given an unconfirmed item on the owner's memory, when the owner confirms it, then `confirmed_at` is set and the item is returned as confirmed.

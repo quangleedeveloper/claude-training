@@ -3,8 +3,11 @@ import uuid
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app import crud
 from app.core.config import settings
 from tests.utils.memory import create_random_memory
+from tests.utils.person import create_random_person
+from tests.utils.user import create_random_user
 
 MEMORY_DATA = {
     "title": "Fishing trips",
@@ -195,3 +198,55 @@ def test_delete_memory_not_enough_permissions(
     )
     assert response.status_code == 403
     assert response.json()["detail"] == "Not enough permissions"
+
+
+def test_read_memories_filtered_by_person(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    user = crud.get_user_by_email(session=db, email=settings.EMAIL_TEST_USER)
+    assert user is not None
+    person = create_random_person(db, owner=user)
+    linked = create_random_memory(db, owner=user)
+    linked.person_id = person.id
+    db.add(linked)
+    db.commit()
+    unlinked = create_random_memory(db, owner=user)
+    response = client.get(
+        f"{settings.API_V1_STR}/memories/",
+        headers=normal_user_token_headers,
+        params={"person_id": str(person.id)},
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert [memory["id"] for memory in content["data"]] == [str(linked.id)]
+    assert content["count"] == 1
+    assert str(unlinked.id) not in [memory["id"] for memory in content["data"]]
+
+
+def test_read_memories_filtered_by_person_of_another_user(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session
+) -> None:
+    other = create_random_user(db)
+    person = create_random_person(db, owner=other)
+    memory = create_random_memory(db, owner=other)
+    memory.person_id = person.id
+    db.add(memory)
+    db.commit()
+    response = client.get(
+        f"{settings.API_V1_STR}/memories/",
+        headers=normal_user_token_headers,
+        params={"person_id": str(person.id)},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"data": [], "count": 0}
+
+
+def test_read_memories_filter_rejects_a_bad_person_id(
+    client: TestClient, normal_user_token_headers: dict[str, str]
+) -> None:
+    response = client.get(
+        f"{settings.API_V1_STR}/memories/",
+        headers=normal_user_token_headers,
+        params={"person_id": "not-a-uuid"},
+    )
+    assert response.status_code == 422

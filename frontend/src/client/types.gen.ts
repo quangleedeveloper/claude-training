@@ -1689,6 +1689,10 @@ export type memoriesReadMemoriesData = {
          * Limit
          */
         limit?: number;
+        /**
+         * Person Id
+         */
+        person_id?: string | null;
     };
     url: '/api/v1/memories/';
 };

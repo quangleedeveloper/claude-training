@@ -28,37 +28,32 @@ router = APIRouter(prefix="/memories", tags=["memories"])
 
 @router.get("/", response_model=MemoriesPublic)
 def read_memories(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
+    person_id: uuid.UUID | None = None,
 ) -> Any:
     """
-    Retrieve memories.
+    Retrieve memories, optionally only those linked to one person.
     """
+    # Same scoping as before; the person filter only narrows what the caller can see
+    conditions = []
+    if not current_user.is_superuser:
+        conditions.append(col(Memory.owner_id) == current_user.id)
+    if person_id is not None:
+        conditions.append(col(Memory.person_id) == person_id)
 
-    if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Memory)
-        count = session.exec(count_statement).one()
-        statement = (
-            select(Memory)
-            .order_by(col(Memory.created_at).desc())
-            .offset(skip)
-            .limit(limit)
-        )
-        memories = session.exec(statement).all()
-    else:
-        count_statement = (
-            select(func.count())
-            .select_from(Memory)
-            .where(Memory.owner_id == current_user.id)
-        )
-        count = session.exec(count_statement).one()
-        statement = (
-            select(Memory)
-            .where(Memory.owner_id == current_user.id)
-            .order_by(col(Memory.created_at).desc())
-            .offset(skip)
-            .limit(limit)
-        )
-        memories = session.exec(statement).all()
+    count = session.exec(
+        select(func.count()).select_from(Memory).where(*conditions)
+    ).one()
+    memories = session.exec(
+        select(Memory)
+        .where(*conditions)
+        .order_by(col(Memory.created_at).desc())
+        .offset(skip)
+        .limit(limit)
+    ).all()
 
     memories_public = [MemoryPublic.model_validate(memory) for memory in memories]
     return MemoriesPublic(data=memories_public, count=count)
