@@ -1,6 +1,7 @@
 import {
   BookHeart,
   Briefcase,
+  HeartHandshake,
   Home,
   MessageCircleQuestion,
   UserRound,
@@ -25,6 +26,7 @@ const baseItems: Item[] = [
   { icon: BookHeart, title: "Memories", path: "/memories" },
   { icon: UserRound, title: "People", path: "/persons" },
   { icon: MessageCircleQuestion, title: "Ask", path: "/ask" },
+  { icon: HeartHandshake, title: "Shared with me", path: "/shared" },
 ]
 
 export function AppSidebar() {

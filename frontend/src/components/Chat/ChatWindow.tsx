@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ChatStreamError, streamMessage } from "@/lib/streamMessage"
 import ChatMessage, { type ChatLine } from "./ChatMessage"
 import EndChat from "./EndChat"
+import RecallPanel from "./RecallPanel"
 
 const formSchema = z.object({
   text: z
@@ -322,6 +323,8 @@ const ChatWindow = ({ personId }: ChatWindowProps) => {
           </LoadingButton>
         </form>
       </Form>
+
+      <RecallPanel personId={personId} />
     </div>
   )
 }

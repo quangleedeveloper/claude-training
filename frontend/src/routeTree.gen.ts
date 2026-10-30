@@ -21,6 +21,7 @@ import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutMemoriesRouteImport } from './routes/_layout/memories'
 import { Route as LayoutPersonsRouteImport } from './routes/_layout/persons'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutSharedRouteImport } from './routes/_layout/shared'
 import { Route as LayoutChatPersonIdRouteImport } from './routes/_layout/chat.$personId'
 
 const LayoutRoute = LayoutRouteImport.update({
@@ -82,6 +83,11 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutSharedRoute = LayoutSharedRouteImport.update({
+  id: '/shared',
+  path: '/shared',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutChatPersonIdRoute = LayoutChatPersonIdRouteImport.update({
   id: '/chat/$personId',
   path: '/chat/$personId',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/memories': typeof LayoutMemoriesRoute
   '/persons': typeof LayoutPersonsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/shared': typeof LayoutSharedRoute
   '/chat/$personId': typeof LayoutChatPersonIdRoute
 }
 export interface FileRoutesByTo {
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/memories': typeof LayoutMemoriesRoute
   '/persons': typeof LayoutPersonsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/shared': typeof LayoutSharedRoute
   '/': typeof LayoutIndexRoute
   '/chat/$personId': typeof LayoutChatPersonIdRoute
 }
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/_layout/memories': typeof LayoutMemoriesRoute
   '/_layout/persons': typeof LayoutPersonsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/shared': typeof LayoutSharedRoute
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/chat/$personId': typeof LayoutChatPersonIdRoute
 }
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/memories'
     | '/persons'
     | '/settings'
+    | '/shared'
     | '/chat/$personId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/memories'
     | '/persons'
     | '/settings'
+    | '/shared'
     | '/'
     | '/chat/$personId'
   id:
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/_layout/memories'
     | '/_layout/persons'
     | '/_layout/settings'
+    | '/_layout/shared'
     | '/_layout/'
     | '/_layout/chat/$personId'
   fileRoutesById: FileRoutesById
@@ -272,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/shared': {
+      id: '/_layout/shared'
+      path: '/shared'
+      fullPath: '/shared'
+      preLoaderRoute: typeof LayoutSharedRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/chat/$personId': {
       id: '/_layout/chat/$personId'
       path: '/chat/$personId'
@@ -289,6 +308,7 @@ interface LayoutRouteChildren {
   LayoutMemoriesRoute: typeof LayoutMemoriesRoute
   LayoutPersonsRoute: typeof LayoutPersonsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutSharedRoute: typeof LayoutSharedRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutChatPersonIdRoute: typeof LayoutChatPersonIdRoute
 }
@@ -300,6 +320,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutMemoriesRoute: LayoutMemoriesRoute,
   LayoutPersonsRoute: LayoutPersonsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutSharedRoute: LayoutSharedRoute,
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutChatPersonIdRoute: LayoutChatPersonIdRoute,
 }
