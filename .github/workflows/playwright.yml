@@ -50,6 +50,9 @@ jobs:
         shardIndex: [1, 2, 3, 4]
         shardTotal: [4]
       fail-fast: false
+    env:
+      # Full-page screenshots of every test, only on pull requests
+      PR_SCREENSHOTS: ${{ github.event_name == 'pull_request' && '1' || '' }}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -83,7 +86,7 @@ jobs:
     - run: docker compose down -v --remove-orphans
     - run: docker compose run --rm backend bash scripts/prestart.sh
     - name: Run Playwright tests
-      run: docker compose run --rm playwright bunx playwright test --fail-on-flaky-tests --trace=retain-on-failure --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+      run: docker compose run --rm -e PR_SCREENSHOTS playwright bunx playwright test --fail-on-flaky-tests --trace=retain-on-failure --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
     - run: docker compose down -v --remove-orphans
     - name: Upload blob report to GitHub Actions Artifacts
       if: ${{ !cancelled() }}
@@ -93,6 +96,15 @@ jobs:
         path: frontend/blob-report
         include-hidden-files: true
         retention-days: 1
+
+    - name: Upload PR screenshots
+      if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: pr-screenshots-${{ matrix.shardIndex }}
+        path: frontend/test-results/**/*.png
+        if-no-files-found: ignore
+        retention-days: 14
 
   merge-playwright-reports:
     needs:

@@ -18,6 +18,9 @@ wrote a change never approves it.
 5. **Compliance**: the change matches its ticket's FR and AC IDs in
    `specs/<feature>/spec.md` and its plan in `specs/<feature>/plans/`; tests or eval
    cases exist for each AC it claims; questions were answered in the ticket, not elsewhere.
+   A PR that changes `frontend/src/` must show screenshots (or the `pr-screenshots-*`
+   artifacts must exist); flag a UI PR without them as a Nit, and as Important if it
+   changes how family data is shown.
 
 ## Severity
 - **Important**: breaks behaviour, leaks family data, lets the robot invent or misattribute
