@@ -47,12 +47,78 @@ test.describe("Memories management", () => {
 
     await page.getByRole("button", { name: "Add Memory" }).click()
     await page.getByRole("textbox", { name: "Title" }).fill(title)
-    await page.getByRole("textbox", { name: "Memory *" }).fill(content)
+    await page
+      .getByRole("textbox", { name: "Memory", exact: true })
+      .fill(content)
     await page.getByRole("button", { name: "Save" }).click()
 
     await expect(page.getByText("Memory created successfully")).toBeVisible()
     await expect(page.getByText(title)).toBeVisible()
     await expect(page.getByText(content)).toBeVisible()
+  })
+
+  test("The Memory field is a text editor that keeps its formatting", async ({
+    page,
+  }) => {
+    const title = randomMemoryTitle()
+
+    await page.getByRole("button", { name: "Add Memory" }).click()
+    await expect(page.getByRole("toolbar")).toBeVisible()
+    await page.getByRole("textbox", { name: "Title" }).fill(title)
+
+    const editor = page.getByRole("textbox", { name: "Memory", exact: true })
+    await editor.click()
+    await page.getByRole("button", { name: "Bold" }).click()
+    await page.keyboard.type("Dawn fishing")
+    await page.getByRole("button", { name: "Bold" }).click()
+    await page.keyboard.type(" with Grandpa")
+    await page.keyboard.press("Enter")
+    await page.getByRole("button", { name: "Bulleted list" }).click()
+    await page.keyboard.type("A thermos of tea")
+    await page.getByRole("button", { name: "Save" }).click()
+    await expect(page.getByText("Memory created successfully")).toBeVisible()
+
+    // The table shows the words, not the Markdown marks
+    const row = page.getByRole("row").filter({ hasText: title })
+    await expect(row).toContainText("Dawn fishing with Grandpa")
+    await expect(row).not.toContainText("**")
+
+    // Reopening shows the formatting again
+    await row.getByRole("button").last().click()
+    await page.getByRole("menuitem", { name: "Edit Memory" }).click()
+    const reopened = page.getByRole("textbox", { name: "Memory", exact: true })
+    await expect(reopened.locator("strong")).toHaveText("Dawn fishing")
+    await expect(reopened.locator("ul li")).toHaveText("A thermos of tea")
+  })
+
+  test("The Memory editor is required", async ({ page }) => {
+    await page.getByRole("button", { name: "Add Memory" }).click()
+    await page.getByRole("textbox", { name: "Title" }).fill(randomMemoryTitle())
+    await page.getByRole("button", { name: "Save" }).click()
+
+    await expect(page.getByText("Memory is required")).toBeVisible()
+  })
+
+  test("Plain text in an older memory opens in the editor", async ({
+    page,
+  }) => {
+    const title = randomMemoryTitle()
+    const content = "He woke us up before dawn every summer."
+
+    await page.getByRole("button", { name: "Add Memory" }).click()
+    await page.getByRole("textbox", { name: "Title" }).fill(title)
+    await page
+      .getByRole("textbox", { name: "Memory", exact: true })
+      .fill(content)
+    await page.getByRole("button", { name: "Save" }).click()
+    await expect(page.getByText("Memory created successfully")).toBeVisible()
+
+    const row = page.getByRole("row").filter({ hasText: title })
+    await row.getByRole("button").last().click()
+    await page.getByRole("menuitem", { name: "Edit Memory" }).click()
+    await expect(
+      page.getByRole("textbox", { name: "Memory", exact: true }),
+    ).toHaveText(content)
   })
 
   const createPerson = async (name: string) => {
@@ -72,7 +138,7 @@ test.describe("Memories management", () => {
   const fillMemory = async (page: Page, title: string) => {
     await page.getByRole("textbox", { name: "Title" }).fill(title)
     await page
-      .getByRole("textbox", { name: "Memory *" })
+      .getByRole("textbox", { name: "Memory", exact: true })
       .fill(randomMemoryContent())
   }
 
@@ -174,7 +240,7 @@ test.describe("Memories management", () => {
       await page.getByRole("button", { name: "Add Memory" }).click()
       await page.getByRole("textbox", { name: "Title" }).fill(memoryTitle)
       await page
-        .getByRole("textbox", { name: "Memory *" })
+        .getByRole("textbox", { name: "Memory", exact: true })
         .fill(randomMemoryContent())
       await page.getByRole("button", { name: "Save" }).click()
       await expect(page.getByText("Memory created successfully")).toBeVisible()

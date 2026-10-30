@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 
 import type { MemoryPublic } from "@/client"
 import type { DataTableFeatures } from "@/components/Common/DataTable"
+import { markdownToPlainText } from "@/lib/markdown"
 import { MemoryActionsMenu } from "./MemoryActionsMenu"
 import PersonCell from "./PersonCell"
 
@@ -23,7 +24,7 @@ export const columns: ColumnDef<DataTableFeatures, MemoryPublic>[] = [
     header: "Memory",
     cell: ({ row }) => (
       <span className="max-w-md truncate block text-muted-foreground">
-        {row.original.content}
+        {markdownToPlainText(row.original.content)}
       </span>
     ),
   },
