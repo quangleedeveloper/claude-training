@@ -163,7 +163,13 @@ const ChatWindow = ({ personId }: ChatWindowProps) => {
             finished = true
             update(replyId, (line) => ({
               ...line,
-              sources: event.done.fallback ? undefined : event.done.sources,
+              // The sources are what the model was shown, not what the reply used:
+              // listing them under a reply that cites none would suggest it is
+              // backed by them
+              sources:
+                event.done.fallback || event.done.uncited
+                  ? undefined
+                  : event.done.sources,
               uncited: event.done.uncited && !event.done.fallback,
             }))
           } else {

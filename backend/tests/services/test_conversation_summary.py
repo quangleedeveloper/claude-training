@@ -9,7 +9,7 @@ from sqlmodel import Session, col, func, select
 
 from app.core.config import settings
 from app.core.db import engine
-from app.core.prompt import PERSONA_NOTICE
+from app.core.prompt import PERSONA_NOTICE, SUMMARY_SYSTEM_PROMPT
 from app.models import (
     Conversation,
     ConversationMessage,
@@ -21,8 +21,10 @@ from app.models import (
 from app.services import conversation_summary
 from app.services.conversation_summary import (
     SWEEP_LOCK_KEY,
+    continues_the_dialogue,
     end_conversation,
     end_idle_conversations,
+    format_transcript,
     get_summary,
     run_idle_sweep,
     sweep_once,
@@ -70,7 +72,9 @@ def test_end_conversation_saves_summary(db: Session, llm_client: FakeLLMClient) 
 
     (prompt,) = llm_client.answer_prompts
     assert f"Family member: {GARDEN}" in prompt
-    assert "AI: It was lovely." in prompt
+    # Only the member's words: the AI's replies and the opening notice stay out
+    assert "It was lovely." not in prompt
+    assert "AI:" not in prompt
     assert PERSONA_NOTICE not in prompt
     summary = get_summary(db, person_id, user_id)
     assert summary is not None
@@ -416,3 +420,72 @@ def test_end_idle_conversations_counts_only_those_it_ended(
 
     assert before >= 1
     assert end_idle_conversations(db, llm_client) == 0
+
+
+def test_format_transcript_keeps_only_the_family_members_messages(
+    db: Session,
+) -> None:
+    conversation = create_random_conversation(db)
+    add_message(db, conversation, MessageRole.PERSONA, PERSONA_NOTICE)
+    add_message(db, conversation, MessageRole.USER, "What did you\nbake?")
+    add_message(db, conversation, MessageRole.PERSONA, "Apple pie [1]")
+    add_message(db, conversation, MessageRole.USER, "Thank you")
+    messages = list(
+        db.exec(
+            select(ConversationMessage)
+            .where(col(ConversationMessage.conversation_id) == conversation.id)
+            .order_by(col(ConversationMessage.created_at), col(ConversationMessage.id))
+        ).all()
+    )
+
+    assert format_transcript(messages) == (
+        "Family member: What did you bake?\nFamily member: Thank you"
+    )
+
+
+@pytest.mark.parametrize(
+    ("note", "dialogue"),
+    [
+        ("The family member asked about a song.", False),
+        ("The family member asked about a song. The AI did not know.", False),
+        ("Family member: I'm not sure.\nAI: Don't worry, dear.", True),
+        ("The family member asked about a song.\n  AI: I do not remember.", True),
+        ("family member: hello", True),
+    ],
+)
+def test_continues_the_dialogue(note: str, dialogue: bool) -> None:
+    assert continues_the_dialogue(note) is dialogue
+
+
+def test_summary_that_continues_the_dialogue_is_not_kept(
+    db: Session,
+    llm_client: FakeLLMClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    conversation = create_random_conversation(db)
+    talked(db, conversation)
+    person_id, user_id, conversation_id = (
+        conversation.person_id,
+        conversation.user_id,
+        conversation.id,
+    )
+    monkeypatch.setattr(
+        llm_client,
+        "answer",
+        lambda system, prompt: "Family member: I have a garden.\nAI: Lovely!",  # noqa: ARG005
+    )
+
+    end_conversation(db, llm_client, conversation)
+
+    assert get_summary(db, person_id, user_id) is None
+    db.expire_all()
+    ended = db.get(Conversation, conversation_id)
+    assert ended is not None
+    assert ended.status == ConversationStatus.ENDED
+    assert messages_left(db, conversation_id) == 0
+
+
+def test_summary_prompt_forbids_adding_anything() -> None:
+    assert "Never add a detail" in SUMMARY_SYSTEM_PROMPT
+    assert "only the family member's own" in SUMMARY_SYSTEM_PROMPT
+    assert "{" not in SUMMARY_SYSTEM_PROMPT

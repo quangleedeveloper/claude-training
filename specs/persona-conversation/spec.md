@@ -138,7 +138,7 @@ average of 4 or more out of 5 on both, and zero invented memories.
 - **AC-13.1** Given an owner or member who opens the chat for a person, then a conversation is opened and the notice is shown at the top and stays visible while they chat.
 - **AC-13.2** Given a message sent, then it appears at once, the input is disabled until the reply ends, and the reply grows as `token` events arrive inside a region marked `aria-live="polite"`.
 - **AC-13.3** Given a reply with `[n]` citations and a `done` event with sources, then each valid `[n]` links to the matching source listed under the reply (item text and memory title); an `[n]` with no source stays plain text.
-- **AC-13.4** Given `done.fallback` is true, then the fixed reply is shown as a normal reply with no sources; given `done.uncited` is true, then the reply carries a small note that it is not backed by a memory.
+- **AC-13.4** Given `done.fallback` is true, then the fixed reply is shown as a normal reply with no sources; given `done.uncited` is true, then the reply carries a small note that it is not backed by a memory and lists no sources (they are what the model was shown, not what the reply used).
 - **AC-13.5** Given an `error` event or a network failure, then a generic message is shown, the sent text is kept for retry, and no server error text is shown.
 - **AC-13.6** Given the End button, then a confirm says the chat will be deleted and a short note kept; confirming ends the conversation and leaves the chat.
 - **AC-13.7** Given a 403 or 409 when sending (access removed, or the conversation ended), then the chat says so clearly and sending is disabled.
