@@ -23,6 +23,8 @@ Built on [full-stack-fastapi-template](https://github.com/fastapi/full-stack-fas
 - `.claude/skills/` — Skills invoked automatically by Claude or via slash commands
 - `.claude/agents/` — Subagents (e.g., `code-improver`: read-only, Sonnet-powered code improvement suggestions)
 - `.claude/settings.json` — Team-shared hooks and permissions (commit this file)
+- `.claude/hooks/protect-paths.sh` — PreToolUse hook: blocks agents from `backend/uploads/` (real family media) and, while `.claude/tests-locked` exists, from editing tests, `evals/` and `fixtures/`
+- `intent/`, `specs/<feature>/`, `tickets/`, `qa/`, `evals/grounding/`, `fixtures/` — delivery artifacts (see *Delivery flow*); each folder has a README
 - `.claude/hooks/format.sh` — PostToolUse hook: after Write/Edit, runs ruff on `.py` and Biome (from the nearest `biome.json` package) on TS/JS/JSON/CSS; tools that aren't installed are skipped
 
 ## Common Commands
@@ -79,6 +81,26 @@ description: <what it does and when to use it>
 
 - Skills run on-demand (user types `/<name>`) or auto-trigger when Claude detects a match
 - Add `disable-model-invocation: true` for skills with side effects
+
+## Memorial Robot must-knows
+
+- **Answers come only from the family's memories.** Retrieval (`app/services/retrieval.py`) skips rejected items and is scoped to the caller's own memories; `all_users` is superuser-only.
+- **No context, no model call.** If nothing clears `MIN_RELEVANCE_SCORE`, return the fixed `NO_ANSWER` (`app/services/ask_graph.py`). Every answer returns the memories it used (`AskResponse.sources`), cited as `[n]`.
+- **AI stays local.** Ollama + Whisper behind `LLMClient` / `Transcriber`. Never add a hosted AI API or send memory text or media off the machine. Tests use `app/core/fake_ai.py`.
+- **Prompts live only in `app/core/prompt.py`.** Uploaded stories are data, never instructions.
+- **No memory content in logs or error details**: log IDs and counts only.
+- **Corrections win.** `was_edited` items keep the family's wording through re-extraction.
+- **Real uploads are off-limits** (`backend/uploads/`, hook-enforced). Use synthetic data from `fixtures/` and `backend/tests/utils/`.
+- Details and checklists: the `grounding-policy` and `memorial-privacy` skills.
+
+## Delivery flow (AI-native SDLC)
+
+brief in `tickets/MR-<n>.md` (verbatim) → `intent/<feature>.md` → `specs/<feature>/spec.md` (FR/AC IDs) → tickets `tickets/MR-<n>.md` → `qa/test-matrix.md` + `evals/grounding/` → plan mode `specs/<feature>/plans/MR-<n>.md` → PR reviewed per `REVIEW.md`.
+
+- Use the `ba-intake` skill and its templates for intent, spec, tickets and the test matrix.
+- **Questions go only in the ticket's `## Questions` section**; the answer updates `spec.md` in the same PR.
+- Before reporting a ticket done, run the `verifier` subagent.
+- Bug fixes: commit the failing test, `touch .claude/tests-locked`, fix the code, then delete the lock.
 
 ## Conventions
 

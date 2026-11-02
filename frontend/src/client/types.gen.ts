@@ -5,6 +5,38 @@ export type ClientOptions = {
 };
 
 /**
+ * AskRequest
+ */
+export type AskRequest = {
+    /**
+     * Question
+     */
+    question: string;
+    /**
+     * Memory Id
+     */
+    memory_id?: string | null;
+    /**
+     * All Users
+     */
+    all_users?: boolean;
+};
+
+/**
+ * AskResponse
+ */
+export type AskResponse = {
+    /**
+     * Answer
+     */
+    answer: string;
+    /**
+     * Sources
+     */
+    sources: Array<SearchHit>;
+};
+
+/**
  * Body_login-login_access_token
  */
 export type Body_login_login_access_token = {
@@ -33,6 +65,153 @@ export type Body_login_login_access_token = {
      */
     client_secret?: string | null;
 };
+
+/**
+ * Body_memory_files-upload_memory_files
+ */
+export type Body_memory_files_upload_memory_files = {
+    /**
+     * Files
+     */
+    files: Array<Blob | File>;
+};
+
+/**
+ * ConfirmAllResult
+ */
+export type ConfirmAllResult = {
+    /**
+     * Confirmed
+     */
+    confirmed: number;
+};
+
+/**
+ * ConversationOpened
+ */
+export type ConversationOpened = {
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    /**
+     * Notice
+     */
+    notice: string;
+};
+
+/**
+ * ExtractedCategory
+ */
+export type ExtractedCategory = 'event' | 'person' | 'place' | 'fact' | 'quote';
+
+/**
+ * ExtractedMemoriesPublic
+ */
+export type ExtractedMemoriesPublic = {
+    /**
+     * Data
+     */
+    data: Array<ExtractedMemoryPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * ExtractedMemoryPublic
+ */
+export type ExtractedMemoryPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Memory Id
+     */
+    memory_id: string;
+    /**
+     * File Id
+     */
+    file_id?: string | null;
+    category: ExtractedCategory;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * People
+     */
+    people: Array<string>;
+    /**
+     * Event Date Text
+     */
+    event_date_text?: string | null;
+    /**
+     * Location
+     */
+    location?: string | null;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    status: ExtractedStatus;
+    source: ExtractedSource;
+    /**
+     * Confirmed At
+     */
+    confirmed_at?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Updated At
+     */
+    updated_at?: string | null;
+    /**
+     * Confirmed
+     */
+    readonly confirmed: boolean;
+};
+
+/**
+ * ExtractedMemoryUpdate
+ */
+export type ExtractedMemoryUpdate = {
+    category?: ExtractedCategory | null;
+    /**
+     * Content
+     */
+    content?: string | null;
+    /**
+     * People
+     */
+    people?: Array<string> | null;
+    /**
+     * Event Date Text
+     */
+    event_date_text?: string | null;
+    /**
+     * Location
+     */
+    location?: string | null;
+    /**
+     * Rejected
+     */
+    rejected?: boolean | null;
+};
+
+/**
+ * ExtractedSource
+ */
+export type ExtractedSource = 'story' | 'image' | 'audio' | 'video';
+
+/**
+ * ExtractedStatus
+ */
+export type ExtractedStatus = 'active' | 'edited' | 'rejected';
 
 /**
  * HTTPValidationError
@@ -113,6 +292,242 @@ export type ItemsPublic = {
 };
 
 /**
+ * MemberInvite
+ */
+export type MemberInvite = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Adult Confirmed
+     */
+    adult_confirmed: true;
+};
+
+/**
+ * MemberPublic
+ */
+export type MemberPublic = {
+    /**
+     * User Id
+     */
+    user_id: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Full Name
+     */
+    full_name?: string | null;
+    /**
+     * Invited At
+     */
+    invited_at: string;
+};
+
+/**
+ * MembersPublic
+ */
+export type MembersPublic = {
+    /**
+     * Data
+     */
+    data: Array<MemberPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * MemoriesPublic
+ */
+export type MemoriesPublic = {
+    /**
+     * Data
+     */
+    data: Array<MemoryPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * MemoryCreate
+ */
+export type MemoryCreate = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Person Name
+     */
+    person_name?: string;
+    /**
+     * Content
+     */
+    content: string;
+};
+
+/**
+ * MemoryExtractionStatus
+ */
+export type MemoryExtractionStatus = 'idle' | 'processing' | 'done' | 'failed';
+
+/**
+ * MemoryFileKind
+ */
+export type MemoryFileKind = 'image' | 'audio' | 'video';
+
+/**
+ * MemoryFilePublic
+ */
+export type MemoryFilePublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Memory Id
+     */
+    memory_id: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Content Type
+     */
+    content_type: string;
+    kind: MemoryFileKind;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    status: MemoryFileStatus;
+    /**
+     * Error Message
+     */
+    error_message?: string | null;
+    /**
+     * Extracted Text
+     */
+    extracted_text?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Processed At
+     */
+    processed_at?: string | null;
+};
+
+/**
+ * MemoryFileStatus
+ */
+export type MemoryFileStatus = 'uploaded' | 'processing' | 'processed' | 'failed';
+
+/**
+ * MemoryFilesPublic
+ */
+export type MemoryFilesPublic = {
+    /**
+     * Data
+     */
+    data: Array<MemoryFilePublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * MemoryFilesUploadResult
+ */
+export type MemoryFilesUploadResult = {
+    /**
+     * Uploaded
+     */
+    uploaded: Array<MemoryFilePublic>;
+    /**
+     * Rejected
+     */
+    rejected: Array<RejectedMemoryFile>;
+};
+
+/**
+ * MemoryPersonLink
+ */
+export type MemoryPersonLink = {
+    /**
+     * Person Id
+     */
+    person_id?: string | null;
+};
+
+/**
+ * MemoryPublic
+ */
+export type MemoryPublic = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Person Name
+     */
+    person_name?: string;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Owner Id
+     */
+    owner_id: string;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Person Id
+     */
+    person_id?: string | null;
+    extraction_status: MemoryExtractionStatus;
+    /**
+     * Extraction Error
+     */
+    extraction_error?: string | null;
+};
+
+/**
+ * MemoryUpdate
+ */
+export type MemoryUpdate = {
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Person Name
+     */
+    person_name?: string | null;
+    /**
+     * Content
+     */
+    content?: string | null;
+};
+
+/**
  * Message
  */
 export type Message = {
@@ -137,6 +552,120 @@ export type NewPassword = {
 };
 
 /**
+ * OfferCreate
+ */
+export type OfferCreate = {
+    /**
+     * Content
+     */
+    content: string;
+};
+
+/**
+ * OfferPublic
+ */
+export type OfferPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * From Name
+     */
+    from_name: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
+ * OffersPublic
+ */
+export type OffersPublic = {
+    /**
+     * Data
+     */
+    data: Array<OfferPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * PersonCreate
+ */
+export type PersonCreate = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Other Names
+     */
+    other_names?: Array<string>;
+};
+
+/**
+ * PersonPublic
+ */
+export type PersonPublic = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Other Names
+     */
+    other_names?: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Owner Id
+     */
+    owner_id: string;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+};
+
+/**
+ * PersonUpdate
+ */
+export type PersonUpdate = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Other Names
+     */
+    other_names?: Array<string> | null;
+};
+
+/**
+ * PersonsPublic
+ */
+export type PersonsPublic = {
+    /**
+     * Data
+     */
+    data: Array<PersonPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * PrivateUserCreate
  */
 export type PrivateUserCreate = {
@@ -156,6 +685,123 @@ export type PrivateUserCreate = {
      * Is Verified
      */
     is_verified?: boolean;
+};
+
+/**
+ * RejectedMemoryFile
+ */
+export type RejectedMemoryFile = {
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
+ * SearchHit
+ */
+export type SearchHit = {
+    item: ExtractedMemoryPublic;
+    /**
+     * Memory Title
+     */
+    memory_title: string;
+    /**
+     * Person Name
+     */
+    person_name: string;
+    /**
+     * Score
+     */
+    score: number;
+};
+
+/**
+ * SearchRequest
+ */
+export type SearchRequest = {
+    /**
+     * Query
+     */
+    query: string;
+    /**
+     * Memory Id
+     */
+    memory_id?: string | null;
+    /**
+     * Limit
+     */
+    limit?: number | null;
+    /**
+     * All Users
+     */
+    all_users?: boolean;
+};
+
+/**
+ * SearchResults
+ */
+export type SearchResults = {
+    /**
+     * Data
+     */
+    data: Array<SearchHit>;
+};
+
+/**
+ * SendMessageRequest
+ */
+export type SendMessageRequest = {
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * SharedPersonPublic
+ */
+export type SharedPersonPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * SharedPersonsPublic
+ */
+export type SharedPersonsPublic = {
+    /**
+     * Data
+     */
+    data: Array<SharedPersonPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * SummaryPublic
+ */
+export type SummaryPublic = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
 };
 
 /**
@@ -340,6 +986,116 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * AskResponse
+ */
+export type AskResponseWritable = {
+    /**
+     * Answer
+     */
+    answer: string;
+    /**
+     * Sources
+     */
+    sources: Array<SearchHitWritable>;
+};
+
+/**
+ * ExtractedMemoriesPublic
+ */
+export type ExtractedMemoriesPublicWritable = {
+    /**
+     * Data
+     */
+    data: Array<ExtractedMemoryPublicWritable>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * ExtractedMemoryPublic
+ */
+export type ExtractedMemoryPublicWritable = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Memory Id
+     */
+    memory_id: string;
+    /**
+     * File Id
+     */
+    file_id?: string | null;
+    category: ExtractedCategory;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * People
+     */
+    people: Array<string>;
+    /**
+     * Event Date Text
+     */
+    event_date_text?: string | null;
+    /**
+     * Location
+     */
+    location?: string | null;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    status: ExtractedStatus;
+    source: ExtractedSource;
+    /**
+     * Confirmed At
+     */
+    confirmed_at?: string | null;
+    /**
+     * Created At
+     */
+    created_at?: string | null;
+    /**
+     * Updated At
+     */
+    updated_at?: string | null;
+};
+
+/**
+ * SearchHit
+ */
+export type SearchHitWritable = {
+    item: ExtractedMemoryPublicWritable;
+    /**
+     * Memory Title
+     */
+    memory_title: string;
+    /**
+     * Person Name
+     */
+    person_name: string;
+    /**
+     * Score
+     */
+    score: number;
+};
+
+/**
+ * SearchResults
+ */
+export type SearchResultsWritable = {
+    /**
+     * Data
+     */
+    data: Array<SearchHitWritable>;
 };
 
 export type loginLoginAccessTokenData = {
@@ -920,6 +1676,1137 @@ export type itemsUpdateItemResponses = {
 };
 
 export type itemsUpdateItemResponse = itemsUpdateItemResponses[keyof itemsUpdateItemResponses];
+
+export type memoriesReadMemoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Person Id
+         */
+        person_id?: string | null;
+    };
+    url: '/api/v1/memories/';
+};
+
+export type memoriesReadMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesReadMemoriesError = memoriesReadMemoriesErrors[keyof memoriesReadMemoriesErrors];
+
+export type memoriesReadMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoriesPublic;
+};
+
+export type memoriesReadMemoriesResponse = memoriesReadMemoriesResponses[keyof memoriesReadMemoriesResponses];
+
+export type memoriesCreateMemoryData = {
+    body: MemoryCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/memories/';
+};
+
+export type memoriesCreateMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesCreateMemoryError = memoriesCreateMemoryErrors[keyof memoriesCreateMemoryErrors];
+
+export type memoriesCreateMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type memoriesCreateMemoryResponse = memoriesCreateMemoryResponses[keyof memoriesCreateMemoryResponses];
+
+export type memoriesDeleteMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}';
+};
+
+export type memoriesDeleteMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesDeleteMemoryError = memoriesDeleteMemoryErrors[keyof memoriesDeleteMemoryErrors];
+
+export type memoriesDeleteMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type memoriesDeleteMemoryResponse = memoriesDeleteMemoryResponses[keyof memoriesDeleteMemoryResponses];
+
+export type memoriesReadMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}';
+};
+
+export type memoriesReadMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesReadMemoryError = memoriesReadMemoryErrors[keyof memoriesReadMemoryErrors];
+
+export type memoriesReadMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type memoriesReadMemoryResponse = memoriesReadMemoryResponses[keyof memoriesReadMemoryResponses];
+
+export type memoriesUpdateMemoryData = {
+    body: MemoryUpdate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}';
+};
+
+export type memoriesUpdateMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesUpdateMemoryError = memoriesUpdateMemoryErrors[keyof memoriesUpdateMemoryErrors];
+
+export type memoriesUpdateMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type memoriesUpdateMemoryResponse = memoriesUpdateMemoryResponses[keyof memoriesUpdateMemoryResponses];
+
+export type memoriesConfirmAllExtractedData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}/confirm-all';
+};
+
+export type memoriesConfirmAllExtractedErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesConfirmAllExtractedError = memoriesConfirmAllExtractedErrors[keyof memoriesConfirmAllExtractedErrors];
+
+export type memoriesConfirmAllExtractedResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConfirmAllResult;
+};
+
+export type memoriesConfirmAllExtractedResponse = memoriesConfirmAllExtractedResponses[keyof memoriesConfirmAllExtractedResponses];
+
+export type memoriesLinkMemoryPersonData = {
+    body: MemoryPersonLink;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{id}/person';
+};
+
+export type memoriesLinkMemoryPersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoriesLinkMemoryPersonError = memoriesLinkMemoryPersonErrors[keyof memoriesLinkMemoryPersonErrors];
+
+export type memoriesLinkMemoryPersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type memoriesLinkMemoryPersonResponse = memoriesLinkMemoryPersonResponses[keyof memoriesLinkMemoryPersonResponses];
+
+export type memoryFilesReadMemoryFilesData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/';
+};
+
+export type memoryFilesReadMemoryFilesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesReadMemoryFilesError = memoryFilesReadMemoryFilesErrors[keyof memoryFilesReadMemoryFilesErrors];
+
+export type memoryFilesReadMemoryFilesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryFilesPublic;
+};
+
+export type memoryFilesReadMemoryFilesResponse = memoryFilesReadMemoryFilesResponses[keyof memoryFilesReadMemoryFilesResponses];
+
+export type memoryFilesUploadMemoryFilesData = {
+    body: Body_memory_files_upload_memory_files;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/';
+};
+
+export type memoryFilesUploadMemoryFilesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesUploadMemoryFilesError = memoryFilesUploadMemoryFilesErrors[keyof memoryFilesUploadMemoryFilesErrors];
+
+export type memoryFilesUploadMemoryFilesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryFilesUploadResult;
+};
+
+export type memoryFilesUploadMemoryFilesResponse = memoryFilesUploadMemoryFilesResponses[keyof memoryFilesUploadMemoryFilesResponses];
+
+export type memoryFilesReadMemoryFileContentData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/{file_id}/content';
+};
+
+export type memoryFilesReadMemoryFileContentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesReadMemoryFileContentError = memoryFilesReadMemoryFileContentErrors[keyof memoryFilesReadMemoryFileContentErrors];
+
+export type memoryFilesReadMemoryFileContentResponses = {
+    /**
+     * Response Memory Files-Read Memory File Content
+     *
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type memoryFilesRetryMemoryFileData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/{file_id}/retry';
+};
+
+export type memoryFilesRetryMemoryFileErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesRetryMemoryFileError = memoryFilesRetryMemoryFileErrors[keyof memoryFilesRetryMemoryFileErrors];
+
+export type memoryFilesRetryMemoryFileResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryFilePublic;
+};
+
+export type memoryFilesRetryMemoryFileResponse = memoryFilesRetryMemoryFileResponses[keyof memoryFilesRetryMemoryFileResponses];
+
+export type memoryFilesDeleteMemoryFileData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * File Id
+         */
+        file_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/files/{file_id}';
+};
+
+export type memoryFilesDeleteMemoryFileErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type memoryFilesDeleteMemoryFileError = memoryFilesDeleteMemoryFileErrors[keyof memoryFilesDeleteMemoryFileErrors];
+
+export type memoryFilesDeleteMemoryFileResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type memoryFilesDeleteMemoryFileResponse = memoryFilesDeleteMemoryFileResponses[keyof memoryFilesDeleteMemoryFileResponses];
+
+export type personsReadPersonsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/persons/';
+};
+
+export type personsReadPersonsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsReadPersonsError = personsReadPersonsErrors[keyof personsReadPersonsErrors];
+
+export type personsReadPersonsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonsPublic;
+};
+
+export type personsReadPersonsResponse = personsReadPersonsResponses[keyof personsReadPersonsResponses];
+
+export type personsCreatePersonData = {
+    body: PersonCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/persons/';
+};
+
+export type personsCreatePersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsCreatePersonError = personsCreatePersonErrors[keyof personsCreatePersonErrors];
+
+export type personsCreatePersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonPublic;
+};
+
+export type personsCreatePersonResponse = personsCreatePersonResponses[keyof personsCreatePersonResponses];
+
+export type personsReadSharedPersonsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/persons/shared';
+};
+
+export type personsReadSharedPersonsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SharedPersonsPublic;
+};
+
+export type personsReadSharedPersonsResponse = personsReadSharedPersonsResponses[keyof personsReadSharedPersonsResponses];
+
+export type personsDeletePersonData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}';
+};
+
+export type personsDeletePersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsDeletePersonError = personsDeletePersonErrors[keyof personsDeletePersonErrors];
+
+export type personsDeletePersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsDeletePersonResponse = personsDeletePersonResponses[keyof personsDeletePersonResponses];
+
+export type personsReadPersonData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}';
+};
+
+export type personsReadPersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsReadPersonError = personsReadPersonErrors[keyof personsReadPersonErrors];
+
+export type personsReadPersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonPublic;
+};
+
+export type personsReadPersonResponse = personsReadPersonResponses[keyof personsReadPersonResponses];
+
+export type personsUpdatePersonData = {
+    body: PersonUpdate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}';
+};
+
+export type personsUpdatePersonErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsUpdatePersonError = personsUpdatePersonErrors[keyof personsUpdatePersonErrors];
+
+export type personsUpdatePersonResponses = {
+    /**
+     * Successful Response
+     */
+    200: PersonPublic;
+};
+
+export type personsUpdatePersonResponse = personsUpdatePersonResponses[keyof personsUpdatePersonResponses];
+
+export type personsReadMembersData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/members';
+};
+
+export type personsReadMembersErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsReadMembersError = personsReadMembersErrors[keyof personsReadMembersErrors];
+
+export type personsReadMembersResponses = {
+    /**
+     * Successful Response
+     */
+    200: MembersPublic;
+};
+
+export type personsReadMembersResponse = personsReadMembersResponses[keyof personsReadMembersResponses];
+
+export type personsInviteMemberData = {
+    body: MemberInvite;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/members';
+};
+
+export type personsInviteMemberErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsInviteMemberError = personsInviteMemberErrors[keyof personsInviteMemberErrors];
+
+export type personsInviteMemberResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsInviteMemberResponse = personsInviteMemberResponses[keyof personsInviteMemberResponses];
+
+export type personsRevokeMemberData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/members/{user_id}';
+};
+
+export type personsRevokeMemberErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsRevokeMemberError = personsRevokeMemberErrors[keyof personsRevokeMemberErrors];
+
+export type personsRevokeMemberResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsRevokeMemberResponse = personsRevokeMemberResponses[keyof personsRevokeMemberResponses];
+
+export type personsReadOffersData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/offers';
+};
+
+export type personsReadOffersErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsReadOffersError = personsReadOffersErrors[keyof personsReadOffersErrors];
+
+export type personsReadOffersResponses = {
+    /**
+     * Successful Response
+     */
+    200: OffersPublic;
+};
+
+export type personsReadOffersResponse = personsReadOffersResponses[keyof personsReadOffersResponses];
+
+export type personsCreateOfferData = {
+    body: OfferCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/offers';
+};
+
+export type personsCreateOfferErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsCreateOfferError = personsCreateOfferErrors[keyof personsCreateOfferErrors];
+
+export type personsCreateOfferResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsCreateOfferResponse = personsCreateOfferResponses[keyof personsCreateOfferResponses];
+
+export type personsAcceptOfferData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Offer Id
+         */
+        offer_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/offers/{offer_id}/accept';
+};
+
+export type personsAcceptOfferErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsAcceptOfferError = personsAcceptOfferErrors[keyof personsAcceptOfferErrors];
+
+export type personsAcceptOfferResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoryPublic;
+};
+
+export type personsAcceptOfferResponse = personsAcceptOfferResponses[keyof personsAcceptOfferResponses];
+
+export type personsDeclineOfferData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Offer Id
+         */
+        offer_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{id}/offers/{offer_id}';
+};
+
+export type personsDeclineOfferErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type personsDeclineOfferError = personsDeclineOfferErrors[keyof personsDeclineOfferErrors];
+
+export type personsDeclineOfferResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type personsDeclineOfferResponse = personsDeclineOfferResponses[keyof personsDeclineOfferResponses];
+
+export type extractedMemoriesReadExtractedMemoriesData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+    };
+    query?: {
+        /**
+         * File Id
+         */
+        file_id?: string | null;
+    };
+    url: '/api/v1/memories/{memory_id}/extracted/';
+};
+
+export type extractedMemoriesReadExtractedMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type extractedMemoriesReadExtractedMemoriesError = extractedMemoriesReadExtractedMemoriesErrors[keyof extractedMemoriesReadExtractedMemoriesErrors];
+
+export type extractedMemoriesReadExtractedMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtractedMemoriesPublic;
+};
+
+export type extractedMemoriesReadExtractedMemoriesResponse = extractedMemoriesReadExtractedMemoriesResponses[keyof extractedMemoriesReadExtractedMemoriesResponses];
+
+export type extractedMemoriesDeleteExtractedMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * Extracted Id
+         */
+        extracted_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/extracted/{extracted_id}';
+};
+
+export type extractedMemoriesDeleteExtractedMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type extractedMemoriesDeleteExtractedMemoryError = extractedMemoriesDeleteExtractedMemoryErrors[keyof extractedMemoriesDeleteExtractedMemoryErrors];
+
+export type extractedMemoriesDeleteExtractedMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type extractedMemoriesDeleteExtractedMemoryResponse = extractedMemoriesDeleteExtractedMemoryResponses[keyof extractedMemoriesDeleteExtractedMemoryResponses];
+
+export type extractedMemoriesUpdateExtractedMemoryData = {
+    body: ExtractedMemoryUpdate;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * Extracted Id
+         */
+        extracted_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/extracted/{extracted_id}';
+};
+
+export type extractedMemoriesUpdateExtractedMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type extractedMemoriesUpdateExtractedMemoryError = extractedMemoriesUpdateExtractedMemoryErrors[keyof extractedMemoriesUpdateExtractedMemoryErrors];
+
+export type extractedMemoriesUpdateExtractedMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtractedMemoryPublic;
+};
+
+export type extractedMemoriesUpdateExtractedMemoryResponse = extractedMemoriesUpdateExtractedMemoryResponses[keyof extractedMemoriesUpdateExtractedMemoryResponses];
+
+export type extractedMemoriesUnconfirmExtractedMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * Extracted Id
+         */
+        extracted_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/extracted/{extracted_id}/confirm';
+};
+
+export type extractedMemoriesUnconfirmExtractedMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type extractedMemoriesUnconfirmExtractedMemoryError = extractedMemoriesUnconfirmExtractedMemoryErrors[keyof extractedMemoriesUnconfirmExtractedMemoryErrors];
+
+export type extractedMemoriesUnconfirmExtractedMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtractedMemoryPublic;
+};
+
+export type extractedMemoriesUnconfirmExtractedMemoryResponse = extractedMemoriesUnconfirmExtractedMemoryResponses[keyof extractedMemoriesUnconfirmExtractedMemoryResponses];
+
+export type extractedMemoriesConfirmExtractedMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         */
+        memory_id: string;
+        /**
+         * Extracted Id
+         */
+        extracted_id: string;
+    };
+    query?: never;
+    url: '/api/v1/memories/{memory_id}/extracted/{extracted_id}/confirm';
+};
+
+export type extractedMemoriesConfirmExtractedMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type extractedMemoriesConfirmExtractedMemoryError = extractedMemoriesConfirmExtractedMemoryErrors[keyof extractedMemoriesConfirmExtractedMemoryErrors];
+
+export type extractedMemoriesConfirmExtractedMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExtractedMemoryPublic;
+};
+
+export type extractedMemoriesConfirmExtractedMemoryResponse = extractedMemoriesConfirmExtractedMemoryResponses[keyof extractedMemoriesConfirmExtractedMemoryResponses];
+
+export type searchSearchMemoriesData = {
+    body: SearchRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/search/';
+};
+
+export type searchSearchMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type searchSearchMemoriesError = searchSearchMemoriesErrors[keyof searchSearchMemoriesErrors];
+
+export type searchSearchMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: SearchResults;
+};
+
+export type searchSearchMemoriesResponse = searchSearchMemoriesResponses[keyof searchSearchMemoriesResponses];
+
+export type searchAskMemoriesData = {
+    body: AskRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/search/ask';
+};
+
+export type searchAskMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type searchAskMemoriesError = searchAskMemoriesErrors[keyof searchAskMemoriesErrors];
+
+export type searchAskMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: AskResponse;
+};
+
+export type searchAskMemoriesResponse = searchAskMemoriesResponses[keyof searchAskMemoriesResponses];
+
+export type conversationsOpenConversationData = {
+    body?: never;
+    path: {
+        /**
+         * Person Id
+         */
+        person_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{person_id}/conversations';
+};
+
+export type conversationsOpenConversationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsOpenConversationError = conversationsOpenConversationErrors[keyof conversationsOpenConversationErrors];
+
+export type conversationsOpenConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConversationOpened;
+};
+
+export type conversationsOpenConversationResponse = conversationsOpenConversationResponses[keyof conversationsOpenConversationResponses];
+
+export type conversationsSendMessageData = {
+    body: SendMessageRequest;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}/messages';
+};
+
+export type conversationsSendMessageErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsSendMessageError = conversationsSendMessageErrors[keyof conversationsSendMessageErrors];
+
+export type conversationsSendMessageResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type conversationsEndConversationData = {
+    body?: never;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}/end';
+};
+
+export type conversationsEndConversationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsEndConversationError = conversationsEndConversationErrors[keyof conversationsEndConversationErrors];
+
+export type conversationsEndConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type conversationsEndConversationResponse = conversationsEndConversationResponses[keyof conversationsEndConversationResponses];
+
+export type conversationsDeleteSummaryData = {
+    body?: never;
+    path: {
+        /**
+         * Person Id
+         */
+        person_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{person_id}/summary';
+};
+
+export type conversationsDeleteSummaryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsDeleteSummaryError = conversationsDeleteSummaryErrors[keyof conversationsDeleteSummaryErrors];
+
+export type conversationsDeleteSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type conversationsDeleteSummaryResponse = conversationsDeleteSummaryResponses[keyof conversationsDeleteSummaryResponses];
+
+export type conversationsReadSummaryData = {
+    body?: never;
+    path: {
+        /**
+         * Person Id
+         */
+        person_id: string;
+    };
+    query?: never;
+    url: '/api/v1/persons/{person_id}/summary';
+};
+
+export type conversationsReadSummaryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type conversationsReadSummaryError = conversationsReadSummaryErrors[keyof conversationsReadSummaryErrors];
+
+export type conversationsReadSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: SummaryPublic;
+};
+
+export type conversationsReadSummaryResponse = conversationsReadSummaryResponses[keyof conversationsReadSummaryResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;

@@ -1,10 +1,25 @@
 import uuid
+from collections.abc import Sequence
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
+from app.core.checkpoint import clear_threads
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from app.core.storage import FileStorage
+from app.models import (
+    Item,
+    ItemCreate,
+    Memory,
+    MemoryCreate,
+    MemoryFile,
+    MemoryFileKind,
+    Person,
+    PersonCreate,
+    User,
+    UserCreate,
+    UserUpdate,
+)
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -66,3 +81,69 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     session.commit()
     session.refresh(db_item)
     return db_item
+
+
+def create_memory(
+    *, session: Session, memory_in: MemoryCreate, owner_id: uuid.UUID
+) -> Memory:
+    db_memory = Memory.model_validate(memory_in, update={"owner_id": owner_id})
+    session.add(db_memory)
+    session.commit()
+    session.refresh(db_memory)
+    return db_memory
+
+
+def create_person(
+    *, session: Session, person_in: PersonCreate, owner_id: uuid.UUID
+) -> Person:
+    db_person = Person.model_validate(person_in, update={"owner_id": owner_id})
+    session.add(db_person)
+    session.commit()
+    session.refresh(db_person)
+    return db_person
+
+
+def create_memory_file(
+    *,
+    session: Session,
+    memory_id: uuid.UUID,
+    file_id: uuid.UUID,
+    filename: str,
+    content_type: str,
+    kind: MemoryFileKind,
+    size_bytes: int,
+    storage_key: str,
+) -> MemoryFile:
+    db_file = MemoryFile(
+        id=file_id,
+        memory_id=memory_id,
+        filename=filename,
+        content_type=content_type,
+        kind=kind,
+        size_bytes=size_bytes,
+        storage_key=storage_key,
+    )
+    session.add(db_file)
+    session.commit()
+    session.refresh(db_file)
+    return db_file
+
+
+def remove_memory_files(
+    *, session: Session, storage: FileStorage, memory_ids: Sequence[uuid.UUID]
+) -> None:
+    """Delete stored bytes and saved processing progress; the rows go with their
+    memory (DB cascade).
+
+    Call this before deleting the memories or their owner, or the files are orphaned.
+    """
+    if not memory_ids:
+        return
+    statement = select(MemoryFile.id, MemoryFile.storage_key).where(
+        col(MemoryFile.memory_id).in_(memory_ids)
+    )
+    thread_ids: list[str] = []
+    for file_id, storage_key in session.exec(statement).all():
+        storage.delete(storage_key)
+        thread_ids.append(str(file_id))
+    clear_threads(thread_ids)

@@ -1,0 +1,14 @@
+{
+  "id": "G-102",
+  "from": "AC-6.1",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "question": "What did you think of my wedding?",
+  "expect": {
+    "fallback": true,
+    "cites": [],
+    "must_include": [],
+    "must_not_include": []
+  }
+}

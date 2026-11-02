@@ -20,7 +20,10 @@
 6. Run the checks in `testing.md`. Then push and open a merge request against `main`.
 
 ## Merge requests (GitLab: origin is gitlab.asoft-python.com)
-- Title in Conventional Commit format. Description: what and why, how it was tested, screenshots for UI, and the migration and env-var changes.
+- Title in Conventional Commit format. Description: what and why, how it was tested, screenshots for UI, and the migration and env-var changes. The template in `.github/pull_request_template.md` has a section for each.
+- **Screenshots are required when the UI changes**: the main state, an empty or error state, and before/after for a changed screen. Attach them to the description; write "No UI change" otherwise.
+  - Get them with `PR_SCREENSHOTS=1 bunx playwright test <spec>` (full-page PNG files in `frontend/test-results/`), or from the `pr-screenshots-*` artifacts of the PR's Playwright run (kept 14 days).
+  - Only synthetic data: never real family media or text (`backend/uploads/` is off-limits).
 - Keep MRs small (aim for under ~400 changed lines, excluding generated files).
 - At least one approval. Squash-merge into `main`.
 

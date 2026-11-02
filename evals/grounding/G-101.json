@@ -1,0 +1,18 @@
+{
+  "id": "G-101",
+  "from": "AC-5.1",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "question": "What was your first job?",
+  "expect": {
+    "fallback": false,
+    "cites": [
+      "I-01"
+    ],
+    "must_include": [
+      "mill"
+    ],
+    "must_not_include": []
+  }
+}

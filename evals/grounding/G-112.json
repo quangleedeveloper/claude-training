@@ -1,0 +1,21 @@
+{
+  "id": "G-112",
+  "from": "AC-12.2",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "summary": "We talked about Leeds, where she was born.",
+  "question": "Remind me where you were born.",
+  "expect": {
+    "fallback": false,
+    "cites": [
+      "I-05"
+    ],
+    "must_include": [
+      "Bristol"
+    ],
+    "must_not_include": [
+      "Leeds"
+    ]
+  }
+}

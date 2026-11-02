@@ -2,8 +2,11 @@
 !.vscode/extensions.json
 node_modules/
 backend/app/frontend/
+backend/uploads/
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
 .env
+# Local test lock for bug fixes (see .claude/hooks/protect-paths.sh)
+.claude/tests-locked

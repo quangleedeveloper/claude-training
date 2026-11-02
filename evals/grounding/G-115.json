@@ -1,0 +1,15 @@
+{
+  "id": "G-115",
+  "from": "AC-9.2",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "summary": "We talked about the garden behind the house. The member said they just started work as a nurse.",
+  "question": "What did we talk about last time?",
+  "expect": {
+    "must_include": [
+      "garden"
+    ],
+    "not_cites": []
+  }
+}

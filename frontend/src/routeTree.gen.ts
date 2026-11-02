@@ -16,8 +16,13 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutAskRouteImport } from './routes/_layout/ask'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
+import { Route as LayoutMemoriesRouteImport } from './routes/_layout/memories'
+import { Route as LayoutPersonsRouteImport } from './routes/_layout/persons'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutSharedRouteImport } from './routes/_layout/shared'
+import { Route as LayoutChatPersonIdRouteImport } from './routes/_layout/chat.$personId'
 
 const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
@@ -53,14 +58,39 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutAskRoute = LayoutAskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutItemsRoute = LayoutItemsRouteImport.update({
   id: '/items',
   path: '/items',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutMemoriesRoute = LayoutMemoriesRouteImport.update({
+  id: '/memories',
+  path: '/memories',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutPersonsRoute = LayoutPersonsRouteImport.update({
+  id: '/persons',
+  path: '/persons',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutSharedRoute = LayoutSharedRouteImport.update({
+  id: '/shared',
+  path: '/shared',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutChatPersonIdRoute = LayoutChatPersonIdRouteImport.update({
+  id: '/chat/$personId',
+  path: '/chat/$personId',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -71,8 +101,13 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/ask': typeof LayoutAskRoute
   '/items': typeof LayoutItemsRoute
+  '/memories': typeof LayoutMemoriesRoute
+  '/persons': typeof LayoutPersonsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/shared': typeof LayoutSharedRoute
+  '/chat/$personId': typeof LayoutChatPersonIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -80,9 +115,14 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/ask': typeof LayoutAskRoute
   '/items': typeof LayoutItemsRoute
+  '/memories': typeof LayoutMemoriesRoute
+  '/persons': typeof LayoutPersonsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/shared': typeof LayoutSharedRoute
   '/': typeof LayoutIndexRoute
+  '/chat/$personId': typeof LayoutChatPersonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -92,9 +132,14 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/ask': typeof LayoutAskRoute
   '/_layout/items': typeof LayoutItemsRoute
+  '/_layout/memories': typeof LayoutMemoriesRoute
+  '/_layout/persons': typeof LayoutPersonsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/shared': typeof LayoutSharedRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/chat/$personId': typeof LayoutChatPersonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -105,8 +150,13 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/ask'
     | '/items'
+    | '/memories'
+    | '/persons'
     | '/settings'
+    | '/shared'
+    | '/chat/$personId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -114,9 +164,14 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/ask'
     | '/items'
+    | '/memories'
+    | '/persons'
     | '/settings'
+    | '/shared'
     | '/'
+    | '/chat/$personId'
   id:
     | '__root__'
     | '/_layout'
@@ -125,9 +180,14 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
+    | '/_layout/ask'
     | '/_layout/items'
+    | '/_layout/memories'
+    | '/_layout/persons'
     | '/_layout/settings'
+    | '/_layout/shared'
     | '/_layout/'
+    | '/_layout/chat/$personId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -189,11 +249,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/ask': {
+      id: '/_layout/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof LayoutAskRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/items': {
       id: '/_layout/items'
       path: '/items'
       fullPath: '/items'
       preLoaderRoute: typeof LayoutItemsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/memories': {
+      id: '/_layout/memories'
+      path: '/memories'
+      fullPath: '/memories'
+      preLoaderRoute: typeof LayoutMemoriesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/persons': {
+      id: '/_layout/persons'
+      path: '/persons'
+      fullPath: '/persons'
+      preLoaderRoute: typeof LayoutPersonsRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/settings': {
@@ -203,21 +284,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/shared': {
+      id: '/_layout/shared'
+      path: '/shared'
+      fullPath: '/shared'
+      preLoaderRoute: typeof LayoutSharedRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/chat/$personId': {
+      id: '/_layout/chat/$personId'
+      path: '/chat/$personId'
+      fullPath: '/chat/$personId'
+      preLoaderRoute: typeof LayoutChatPersonIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutAskRoute: typeof LayoutAskRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
+  LayoutMemoriesRoute: typeof LayoutMemoriesRoute
+  LayoutPersonsRoute: typeof LayoutPersonsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutSharedRoute: typeof LayoutSharedRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutChatPersonIdRoute: typeof LayoutChatPersonIdRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
+  LayoutAskRoute: LayoutAskRoute,
   LayoutItemsRoute: LayoutItemsRoute,
+  LayoutMemoriesRoute: LayoutMemoriesRoute,
+  LayoutPersonsRoute: LayoutPersonsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutSharedRoute: LayoutSharedRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutChatPersonIdRoute: LayoutChatPersonIdRoute,
 }
 
 const LayoutRouteWithChildren =

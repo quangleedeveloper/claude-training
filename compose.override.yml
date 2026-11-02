@@ -25,7 +25,8 @@ services:
       - --api.insecure=true
   db:
     ports:
-      - "5432:5432"
+      # 5433 on the host: a native Postgres service often already owns 5432
+      - "127.0.0.1:5433:5432"
 
   adminer:
     ports:

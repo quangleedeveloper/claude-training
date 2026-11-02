@@ -1,0 +1,16 @@
+{
+  "id": "G-117",
+  "from": "AC-8.2",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "question": "What did you say about the rain?",
+  "expect": {
+    "fallback": true,
+    "cites": [],
+    "must_include": [],
+    "must_not_include": [
+      "laundry"
+    ]
+  }
+}

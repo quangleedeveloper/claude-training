@@ -1,0 +1,5 @@
+[default.extend-words]
+# "BA" is the business analyst role; "ba-intake" is a skill name
+alls = "alls"
+ba = "ba"
+BA = "BA"
