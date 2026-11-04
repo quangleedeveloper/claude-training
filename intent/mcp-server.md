@@ -1,6 +1,6 @@
 # MCP server: let local assistants use the family's memories
 
-author: BA (with Claude) for Lead (as client) · status: draft · spec: not started
+author: BA (with Claude) for Lead (as client) · status: draft (all questions answered 2026-11-04; accepted on merge) · spec: not started
 brief: tickets/MR-120.md
 
 ## Problem
@@ -38,8 +38,8 @@ A local assistant can, with a family member's own account:
 
 without any memory text or media leaving the machine, and without seeing anyone else's data.
 
-How we'll know it worked: **not defined by the client yet** (Q1). Proposed, to confirm:
-on synthetic data, every tool refuses what the app refuses (other users' memories, other
+How we'll know it worked: the client gave no measure or demo date (Q1). Proposed, for the
+spec to confirm: on synthetic data, every tool refuses what the app refuses (other users' memories, other
 people's persons), `ask_memory` returns the fixed reply with no model call when nothing
 matches, and the existing grounding evals still pass through the MCP path.
 
@@ -69,7 +69,17 @@ From the product's rules (`CLAUDE.md`, `grounding-policy`, `memorial-privacy`), 
 From the client's choices (2026-11-04):
 - Local-only clients.
 - First tools: `ask_memory`, `search_memories`, `list_personas`, `add_memory`.
-- `add_memory` is a write and needs confirmation (meaning open, Q5).
+- `add_memory` is a write and needs confirmation (Q5).
+
+From the client's answers (Q1 to Q8):
+- The client is a local desktop assistant; users are the owner and invited members with the
+  app's own accounts and rights (Q1, Q6). No demo date yet.
+- Only confirmed items, scoped to one person (Q2); neutral third-person answers, no persona voice (Q3).
+- `add_memory` creates an offer for the owner to review; a direct memory is owner-only and
+  needs confirmation; the server requires a second step beyond client-side approval (Q4, Q5).
+- Local connection only, never reachable from the network; docs state the client must use a local model (Q6).
+- `search_memories` returns raw text, at most 20 hits, for one readable person (Q7).
+- No `all_users` through MCP, even for superusers (Q8).
 
 ## Out of scope
 - Letting hosted assistants connect (Claude Desktop, hosted agents). It would need the
@@ -84,13 +94,13 @@ Sent to the client in `tickets/MR-120.md` on 2026-11-04. Answers land here in th
 
 | # | Question | Why it matters | Answer | Status |
 |---|----------|----------------|--------|--------|
-| Q1 | What is the MCP client for (the robot, a desktop assistant, a developer tool), who uses it, and is there a demo date? | Decides sign-in, the tools that matter first, and the success measure | | pending |
-| Q2 | Should `ask_memory` and `search_memories` use only confirmed items (as the persona does) instead of every non-rejected item (as `/search` does)? | Unconfirmed AI findings could reach an assistant that talks about her | | pending |
-| Q3 | Should `ask_memory` answer in the neutral third-person helper voice or in her voice? | A first-person reply forwarded by another assistant could be mistaken for her words | | pending |
-| Q4 | Does `add_memory` create a memory directly, or an offer the owner reviews? | Persona brief said chats never become memories without the owner's review | | pending |
-| Q5 | What does "needs confirmation" mean: client-side approval only, or a server-side second step? | The server cannot force a client to ask the person | | pending |
-| Q6 | How is a client counted as local and how does it prove who the user is (local process, the person's own account, approved list)? | The server cannot see which model the client runs | | pending |
-| Q7 | May `search_memories` return raw memory text to the client? | Raw stories are more sensitive than cited answers | | pending |
-| Q8 | May a superuser reach everyone's memories through MCP (`all_users`)? | An assistant acting for an admin could read every family's memories | | pending |
+| Q1 | What is the MCP client for (the robot, a desktop assistant, a developer tool), who uses it, and is there a demo date? | Decides sign-in, the tools that matter first, and the success measure | A local desktop assistant, used by the owner and invited members with the same accounts and rights as in the app; no demo date yet | answered |
+| Q2 | Should `ask_memory` and `search_memories` use only confirmed items (as the persona does) instead of every non-rejected item (as `/search` does)? | Unconfirmed AI findings could reach an assistant that talks about her | Confirmed items only, scoped to one person | answered |
+| Q3 | Should `ask_memory` answer in the neutral third-person helper voice or in her voice? | A first-person reply forwarded by another assistant could be mistaken for her words | The neutral third-person helper; no persona voice through MCP for now | answered |
+| Q4 | Does `add_memory` create a memory directly, or an offer the owner reviews? | Persona brief said chats never become memories without the owner's review | An offer the owner reviews; only an owner may create a memory directly, and only after confirmation (Q5) | answered |
+| Q5 | What does "needs confirmation" mean: client-side approval only, or a server-side second step? | The server cannot force a client to ask the person | The server requires a second step; approval in the client alone is not trusted | answered |
+| Q6 | How is a client counted as local and how does it prove who the user is (local process, the person's own account, approved list)? | The server cannot see which model the client runs | Local connection only, never reachable from the network; the person's own account; the docs say the client must use a local model | answered |
+| Q7 | May `search_memories` return raw memory text to the client? | Raw stories are more sensitive than cited answers | Yes: raw text, capped at 20 hits, for one person the caller may read; IDs and counts only in logs | answered |
+| Q8 | May a superuser reach everyone's memories through MCP (`all_users`)? | An assistant acting for an admin could read every family's memories | No; MCP never offers `all_users` | answered |
 
-Safe defaults the spec will use until each is answered are in `tickets/MR-120.md`.
+All answered 2026-11-04.
