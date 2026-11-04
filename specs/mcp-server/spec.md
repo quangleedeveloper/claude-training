@@ -1,6 +1,6 @@
 # Spec: MCP server ("let a local assistant use the family's memories")
 
-intent: `intent/mcp-server.md` (answers in PR #60; accepted when that merges) · brief: `tickets/MR-120.md` · status: draft
+intent: `intent/mcp-server.md` (accepted, PR #60) · brief: `tickets/MR-120.md` · status: draft (waits for the Lead's approval; tickets MR-121 to MR-127, matrix in `qa/test-matrix.md`)
 skills applied: grounding-policy, memorial-privacy (versions: commit e08ccdb)
 
 ## Current behaviour

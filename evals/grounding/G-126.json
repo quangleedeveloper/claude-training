@@ -1,0 +1,20 @@
+{
+  "id": "G-126",
+  "from": "AC-10.1",
+  "spec": "mcp-server",
+  "via": "mcp",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "owner",
+  "question": "Did Margaret ever win the lottery?",
+  "expect": {
+    "cites": [
+      "I-10"
+    ],
+    "must_include": [],
+    "must_not_include": [
+      "won the lottery",
+      "mansion"
+    ]
+  }
+}

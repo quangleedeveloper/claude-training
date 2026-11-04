@@ -1,6 +1,6 @@
 # MCP server: let local assistants use the family's memories
 
-author: BA (with Claude) for Lead (as client) · status: draft (all questions answered 2026-11-04; accepted on merge) · spec: not started
+author: BA (with Claude) for Lead (as client) · status: accepted (PR #60; all questions answered 2026-11-04) · spec: `specs/mcp-server/spec.md`
 brief: tickets/MR-120.md
 
 ## Problem

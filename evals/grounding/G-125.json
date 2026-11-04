@@ -1,0 +1,23 @@
+{
+  "id": "G-125",
+  "from": "AC-4.8",
+  "spec": "mcp-server",
+  "via": "mcp",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "question": "Tell me about Margaret's garden.",
+  "expect": {
+    "fallback": false,
+    "cites": [
+      "I-03"
+    ],
+    "must_include": [
+      "basil"
+    ],
+    "must_not_include": [
+      "I grew",
+      "my garden"
+    ]
+  }
+}
