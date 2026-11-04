@@ -27,6 +27,8 @@ dependencies = [
     "langchain-ollama>=1.1.0",
     "langgraph-checkpoint-postgres>=3.2.0",
     "numpy>=2.5.4",
+    # The MCP server (app/mcp) that lets a local assistant use the family's memories
+    "mcp>=2.3,<3",
 ]
 
 [dependency-groups]

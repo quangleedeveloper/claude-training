@@ -86,13 +86,9 @@ def read_persons(
         .select_from(Person)
         .where(Person.owner_id == current_user.id)
     ).one()
-    persons = session.exec(
-        select(Person)
-        .where(Person.owner_id == current_user.id)
-        .order_by(col(Person.created_at).desc())
-        .offset(skip)
-        .limit(limit)
-    ).all()
+    persons = crud.list_owned_persons(
+        session=session, owner_id=current_user.id, skip=skip, limit=limit
+    )
     persons_public = [PersonPublic.model_validate(person) for person in persons]
     return PersonsPublic(data=persons_public, count=count)
 
@@ -103,12 +99,7 @@ def read_shared_persons(session: SessionDep, current_user: CurrentUser) -> Any:
     """
     List the persons whose owners invited the caller to talk with their persona.
     """
-    persons = session.exec(
-        select(Person)
-        .join(PersonMember, col(PersonMember.person_id) == col(Person.id))
-        .where(col(PersonMember.user_id) == current_user.id)
-        .order_by(col(Person.name), col(Person.id))
-    ).all()
+    persons = crud.list_shared_persons(session=session, user_id=current_user.id)
     shared = [SharedPersonPublic(id=person.id, name=person.name) for person in persons]
     return SharedPersonsPublic(data=shared, count=len(shared))
 

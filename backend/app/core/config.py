@@ -111,6 +111,9 @@ class Settings(BaseSettings):
     CONVERSATION_IDLE_MINUTES: int = 30
     # How often the app looks for idle conversations; 0 turns the check off
     CONVERSATION_SWEEP_SECONDS: int = 60
+    # The MCP server (`python -m app.mcp`) acts as the person this access token belongs
+    # to. Empty means it serves no tool. Get one from POST /login/access-token.
+    MCP_ACCESS_TOKEN: str = ""
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

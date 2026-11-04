@@ -16,6 +16,7 @@ from app.models import (
     MemoryFileKind,
     Person,
     PersonCreate,
+    PersonMember,
     User,
     UserCreate,
     UserUpdate,
@@ -101,6 +102,33 @@ def create_person(
     session.commit()
     session.refresh(db_person)
     return db_person
+
+
+def list_owned_persons(
+    *,
+    session: Session,
+    owner_id: uuid.UUID,
+    skip: int = 0,
+    limit: int | None = None,
+) -> Sequence[Person]:
+    """The persons `owner_id` owns, newest first."""
+    return session.exec(
+        select(Person)
+        .where(col(Person.owner_id) == owner_id)
+        .order_by(col(Person.created_at).desc())
+        .offset(skip)
+        .limit(limit)
+    ).all()
+
+
+def list_shared_persons(*, session: Session, user_id: uuid.UUID) -> Sequence[Person]:
+    """The persons whose owners invited `user_id` to talk with their persona."""
+    return session.exec(
+        select(Person)
+        .join(PersonMember, col(PersonMember.person_id) == col(Person.id))
+        .where(col(PersonMember.user_id) == user_id)
+        .order_by(col(Person.name), col(Person.id))
+    ).all()
 
 
 def create_memory_file(
