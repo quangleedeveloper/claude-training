@@ -1,0 +1,21 @@
+{
+  "id": "G-122",
+  "from": "AC-4.4",
+  "spec": "mcp-server",
+  "via": "mcp",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "owner",
+  "question": "Did Margaret ever live in Paris?",
+  "expect": {
+    "fallback": true,
+    "cites": [],
+    "must_include": [],
+    "must_not_include": [
+      "Paris"
+    ],
+    "not_cites": [
+      "I-09"
+    ]
+  }
+}

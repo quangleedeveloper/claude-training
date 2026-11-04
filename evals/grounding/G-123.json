@@ -1,0 +1,20 @@
+{
+  "id": "G-123",
+  "from": "AC-4.4",
+  "spec": "mcp-server",
+  "via": "mcp",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "question": "Was Margaret a fisherman in Whitby?",
+  "expect": {
+    "cites": [],
+    "must_include": [],
+    "must_not_include": [
+      "fisherman in Whitby"
+    ],
+    "not_cites": [
+      "I-11"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "G-119",
+  "from": "AC-4.2",
+  "spec": "mcp-server",
+  "via": "mcp",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "member",
+  "question": "Where was Margaret born?",
+  "expect": {
+    "fallback": false,
+    "cites": [
+      "I-05"
+    ],
+    "must_include": [
+      "Bristol"
+    ],
+    "must_not_include": []
+  }
+}

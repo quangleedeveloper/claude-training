@@ -29,10 +29,8 @@ def repo(tmp_path: Path) -> Path:
     root = tmp_path / "repo"
     shutil.copytree(REPO / "evals", root / "evals")
     shutil.copytree(REPO / "fixtures", root / "fixtures")
-    (root / "specs/persona-conversation").mkdir(parents=True)
-    shutil.copy(
-        REPO / "specs/persona-conversation/spec.md",
-        root / "specs/persona-conversation/spec.md",
+    shutil.copytree(
+        REPO / "specs", root / "specs", ignore=shutil.ignore_patterns("plans")
     )
     (root / "qa").mkdir()
     shutil.copy(REPO / "qa/test-matrix.md", root / "qa/test-matrix.md")
@@ -79,6 +77,21 @@ def test_from_must_be_an_ac_in_the_spec(repo: Path) -> None:
     edit_case(repo, "G-101", {"from": "AC-99.9"})
 
     assert any("not an AC in the spec" in p for p in validate_evals.validate(repo))
+
+
+def test_from_is_checked_against_the_spec_the_case_names(repo: Path) -> None:
+    # AC-4.8 exists in the MCP spec but not in the persona spec
+    edit_case(repo, "G-101", {"from": "AC-4.8", "spec": "mcp-server"})
+    assert validate_evals.validate(repo) == []
+
+    edit_case(repo, "G-101", {"from": "AC-4.8", "spec": "persona-conversation"})
+    assert any("not an AC in the spec" in p for p in validate_evals.validate(repo))
+
+
+def test_case_must_name_an_existing_spec(repo: Path) -> None:
+    edit_case(repo, "G-101", {"spec": "no-such-feature"})
+
+    assert any("does not exist" in p for p in validate_evals.validate(repo))
 
 
 def test_from_may_be_an_incident_id(repo: Path) -> None:

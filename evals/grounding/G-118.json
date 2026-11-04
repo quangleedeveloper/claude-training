@@ -1,0 +1,20 @@
+{
+  "id": "G-118",
+  "from": "AC-4.1",
+  "spec": "mcp-server",
+  "via": "mcp",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "owner",
+  "question": "What was Margaret's first job?",
+  "expect": {
+    "fallback": false,
+    "cites": [
+      "I-01"
+    ],
+    "must_include": [
+      "mill"
+    ],
+    "must_not_include": []
+  }
+}

@@ -14,6 +14,8 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REQUIRED_CASE_FIELDS = ("id", "from", "fixture", "question", "expect")
 CASE_ID = re.compile(r"^G-\d+$")
+# A case names the spec its `from` AC belongs to; the first feature set the default
+DEFAULT_SPEC = "persona-conversation"
 AC_ID = re.compile(r"AC-N?\d+\.\d+")
 # "from" may also be an incident id (every production incident adds a case)
 INCIDENT_ID = re.compile(r"^INC-\d+$")
@@ -75,7 +77,7 @@ def validate_case(
     path: Path,
     case: dict[str, Any],
     fixtures: dict[str, dict[str, Any]],
-    spec_acs: set[str],
+    spec_acs: dict[str, set[str]],
     matrix_text: str,
 ) -> list[str]:
     problems: list[str] = []
@@ -90,7 +92,11 @@ def validate_case(
     if path.stem != case["id"]:
         problems.append(f"{name}: file name must match the id {case['id']!r}")
     origin = str(case["from"])
-    if not (INCIDENT_ID.match(origin) or origin in spec_acs):
+    spec_name = str(case.get("spec", DEFAULT_SPEC))
+    acs = spec_acs.get(spec_name)
+    if acs is None:
+        problems.append(f"{name}: spec {spec_name!r} does not exist")
+    elif not (INCIDENT_ID.match(origin) or origin in acs):
         problems.append(f"{name}: `from` {origin!r} is not an AC in the spec")
     fixture = fixtures.get(str(case["fixture"]))
     if fixture is None:
@@ -126,8 +132,10 @@ def validate_case(
 def validate(root: Path = REPO_ROOT) -> list[str]:
     """Every problem found in the cases and fixtures under `root`."""
     problems: list[str] = []
-    spec = (root / "specs/persona-conversation/spec.md").read_text(encoding="utf-8")
-    spec_acs = set(AC_ID.findall(spec))
+    spec_acs = {
+        path.parent.name: set(AC_ID.findall(path.read_text(encoding="utf-8")))
+        for path in sorted((root / "specs").glob("*/spec.md"))
+    }
     matrix = (root / "qa/test-matrix.md").read_text(encoding="utf-8")
 
     fixtures: dict[str, dict[str, Any]] = {}

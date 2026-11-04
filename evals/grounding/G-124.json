@@ -1,0 +1,21 @@
+{
+  "id": "G-124",
+  "from": "AC-4.5",
+  "spec": "mcp-server",
+  "via": "mcp",
+  "fixture": "fixtures/families/thomas.json",
+  "person": "mai",
+  "as": "owner",
+  "question": "When did Margaret get married?",
+  "expect": {
+    "cites": [
+      "I-06",
+      "I-07"
+    ],
+    "must_include": [
+      "1975",
+      "1976"
+    ],
+    "must_not_include": []
+  }
+}

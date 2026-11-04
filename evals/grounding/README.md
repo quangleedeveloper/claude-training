@@ -30,6 +30,7 @@ until then this folder holds the cases.
 - `expect.not_cites`: fixture item ids that must not be cited or in `sources`.
 - `expect.fallback` left out: either outcome is fine; only the other checks apply.
 - `note`: why the case may change (for example, a pending decision).
+- `spec`, `via`: which spec the `from` AC belongs to (default `persona-conversation`) and which entry point the case runs through (default the conversation API; `mcp` = the MCP server's `ask_memory` tool, neutral helper voice, confirmed items only). `person` and `as` mean the same as above. Added with MR-121 to MR-127; the runner and validator learn them in MR-127.
 
 - Cases are protected: while `.claude/tests-locked` exists, a hook blocks edits here.
 
