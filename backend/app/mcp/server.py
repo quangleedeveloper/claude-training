@@ -1,11 +1,11 @@
 from mcp.server import MCPServer
 
 from app.core.prompt import MCP_SERVER_INSTRUCTIONS
-from app.mcp import tools_personas
+from app.mcp import tools_ask, tools_personas
 
 # One list of modules that each add their tools, so a new tool has a single place to
 # be registered and tests can walk every tool the server really offers
-TOOL_MODULES = (tools_personas,)
+TOOL_MODULES = (tools_personas, tools_ask)
 
 
 def build_server() -> MCPServer:
