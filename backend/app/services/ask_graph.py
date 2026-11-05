@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Callable
 from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -26,6 +27,9 @@ class AskState(TypedDict, total=False):
     answer: str
 
 
+# A retrieval step: reads the question (and scope) from the state, returns the hits
+Retriever = Callable[[AskState], list[SearchHit]]
+
 # ty does not know LangGraph's TypedDict bound, so it is silenced here, once
 AskGraph = CompiledStateGraph[AskState, None, AskState, AskState]  # ty: ignore[invalid-type-arguments]
 
@@ -47,7 +51,12 @@ def format_context(hits: list[SearchHit]) -> str:
     return "\n".join(lines)
 
 
-def build_ask_graph(session: Session, user: User, llm: LLMClient) -> AskGraph:
+def build_ask_graph(
+    session: Session,
+    user: User,
+    llm: LLMClient,
+    retriever: Retriever | None = None,
+) -> AskGraph:
     """Retrieval-augmented answering that refuses to guess.
 
         START -> retrieve -> grade --(relevant memories)--> generate -> END
@@ -55,9 +64,15 @@ def build_ask_graph(session: Session, user: User, llm: LLMClient) -> AskGraph:
 
     Skipping the model when nothing relevant was found is what keeps the answer
     grounded: a language model asked with an empty context will happily invent one.
+
+    By default it searches the user's own memories. A `retriever` replaces only that
+    step (for one person's confirmed memories, say); grading, the answer and
+    `NO_ANSWER` stay the same for every caller.
     """
 
     def retrieve(state: AskState) -> AskState:
+        if retriever is not None:
+            return {"hits": retriever(state)}
         hits = search_extracted(
             session,
             user,
